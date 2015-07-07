@@ -1,0 +1,228 @@
+
+.logClass{
+    padding:20px;
+}
+
+.checkbox_div{
+	width:50%; 
+	float:right; 
+	margin-right:20px; 
+	vertical-align:top;
+}
+
+.wid99{
+    padding-left:15px;
+    padding-bottom:20px;
+    padding-top:20px;
+}
+
+.ui-icon-circlesmall-plus {
+    background-position: 0 -192px;
+}
+
+.ui-icon-circlesmall-minus {
+    background-position: -16px -192px;
+}
+
+#serverData{border: 1px solid #BBBBBB !important; padding:10px;  width:90%;}
+
+#serverData p{border-bottom: 1px solid #cccccc; padding:10px 10px 0px 20px;
+             background-repeat:no-repeat; 
+             background-position:left bottom; }
+/*
+DBFORM 
+*/
+form.cmxform{
+  text-align:center; 
+}
+
+form.cmxform fieldset {
+  background-color:#ffffff;
+  margin-bottom: 10px;
+  padding: 3px 0px;
+   
+}
+
+form.cmxform li input{
+   width: 50%;
+   height:20px;
+   padding: 0px 0px;
+   margin-bottom: 0px;
+}
+
+/*form.cmxform li input[type="checkbox"]{
+	width:auto;
+}*/
+
+form.cmxform li select, input[type="file"] {
+    width:288px;
+    border:1px solid #ccc;
+    line-height: 20px;
+    -ms-box-sizing:content-box;
+    -moz-box-sizing:content-box;
+    box-sizing:content-box;
+    -webkit-box-sizing:content-box;
+    text-align: right; 
+    padding-bottom:2px;
+    padding-top:1px;
+    margin:0px !important;
+    text-align: left; 
+}
+
+form.cmxform input, textarea{
+    width:288px;
+    border:1px solid #ccc;
+    line-height: 20px;
+    -ms-box-sizing:content-box;
+    -moz-box-sizing:content-box;
+    box-sizing:content-box;
+    -webkit-box-sizing:content-box;
+    text-align: left; 
+}
+
+form.cmxform textarea {
+    resize: none;
+    width:50%;
+    padding: 0px 0px;
+}
+
+form.cmxform label {
+  display: inline-block;
+  line-height: 1.8;
+  vertical-align: middle;
+  text-align: left;
+  float:left;
+  margin-left:10px;
+  width:40%;
+}
+
+
+form.cmxform fieldset li {
+  list-style: none;
+  padding: 3px;
+}
+form.cmxform fieldset fieldset {
+  border: none;
+}
+
+form.cmxform fieldset fieldset label {
+  display: block;
+  width: auto;
+}
+form.cmxform em {
+  font-weight: bold;
+  font-style: normal;
+  color: #f00;
+}
+
+
+form.cmxform .labelright {
+  text-align: right;
+  width: auto;
+}
+
+form.cmxform .input200px {
+  width: 350px; 
+}
+
+form.cmxform input[type=submit], input[type=reset]{
+  height:30px;
+  width: auto; 
+  padding: 0px 10px;
+  margin: 10px;
+}
+
+
+form.cmxform fieldset fieldset label {
+  margin-left: 123px; /* Width plus 3 (html space) */
+}
+
+.checkbox, .radio {
+	position: relative;
+	display: block;
+	margin-top: 10px;
+	margin-bottom: 10px;
+}
+
+.checkbox label, .radio label {
+	min-height: 20px;
+	margin-bottom: 0;
+	font-weight: 400;
+	cursor: pointer;
+	display: inline-block;
+	margin-bottom: 5px;
+	width:150px !important;
+}
+
+form.cmxform input[type=checkbox]{
+	width:auto;
+	vertical-align: middle;
+}
+
+.verticalAlignBottom{
+	position: static;
+	display:table; 
+	vertical-align:bottom !important;	
+}
+
+.addMargin{
+	margin: 20px 20px 5px 20px !important;
+}
+
+.panelClass{width:99%; height:99%; font-size:10px; text-align:center; 
+             border: 1px solid #E5E5E5;}
+             
+.panelTitle{
+   width:100%;
+   height:15px;
+   background-color: #E5E5E5; 
+}
+
+.vBox{
+	width:100%;
+	height:100%;
+	float:left;
+}
+
+.VDividedBox{width:100%; height:100%; border: 1px solid blue;  position:absolute; top:120px;}
+.rowDividedBox{width: 100%; height:33%; border: 1px solid red;}
+/*
+*override boostrapt container
+*/
+.container{
+    width:100%;
+    margin-right: 0;
+    margin-left: 0;
+}
+
+#left, #right{
+    float:left;
+    width:200px;
+    height:200px;
+}
+
+/*
+*FOR HBOX
+*/
+.col100 { width: 100%; overflow:auto; padding: 0px; text-align:center;}
+.col50L { width: 49%;  text-align:left; float:left; border: 1px none black; padding: 0px; margin: 5px 2px;}
+.col50R { width: 49%;  text-align:left; float:right; border: 1px none red; padding: 0px; margin: 5px 2px;}
+
+.contentLeft{text-align: left !important;}
+.contentRight{text-align: right !important;}
+
+.col40L {width: 40%; float:left;  border: 0px;}
+.col60R {width: 60%; float:right; border: 0px; }
+ 
+.col25L { width: 25%;  float: left; border: 1px solid black; padding:  .5em 0em .5em 0em;}
+.col25R { width: 25%;  float: right; border: 1px solid green; padding: .5em 0em .5em 0em;}
+
+.col33L { width: 33%;  float: left; }
+
+.panelsContainer {/*border: 1px none #BBBBBB !important;*/
+	                  padding:  0;
+	                  overflow: hidden;
+	                  margin: 0 !important;
+	                  /*height:100%;*/ 
+                  }
+             

@@ -1,0 +1,447 @@
+html {
+	/* allow scrolling if layout hits min-width/height */
+    overflow:hidden; /*auto !important; /* override Layout default of 'hidden' to allow scrollbars */	
+    height: 100%;
+}
+body{
+    font-family: "Arial","Verdana","sans-serif";
+    font-size: 62.5% !important; 
+    margin: 0;   
+    height: 100%;
+    width:  100%;
+    overflow: hidden;
+    min-width:		950px;
+    /*min-height:		500px;*/
+    padding: 2px 10px; 
+}
+
+.tabNavigator{	
+	width:99%; height:99%;
+}
+
+p{margin:	0 0 1ex;}
+
+.ui-icon-pdf { background-position: -160px 0; }
+.ui-icon-excel { background-position: -176px 0; }
+.ui-icon-print-big { background-position: -192px 0; }
+
+
+.panelClass{width:99%; height:99%; font-size:10px; text-align:center; 
+             border: 1px solid #E5E5E5;
+             margin-bottom:50px;}
+.panelTitle{
+   width:100%;
+   height:15px;
+   background-color: #E5E5E5; 
+}
+
+.vBox{
+	width:100%;
+	height:100%;
+	float:left;
+}
+
+.VDividedBox{width:100%; height:100%; border: 1px solid blue;  position:absolute; top:120px;}
+.rowDividedBox{width: 100%; height:33%; border: 1px solid red;}
+
+#ngeo_if_LOGFILE{
+   overflow:auto;
+}
+#ngeo_if_LIST{
+   overflow:auto; 
+}
+/*
+*#container{
+    width:400px;
+    background-color:black;
+    padding:20px;
+    overflow:hidden;
+}
+#left, #right{
+    float:left;
+    width:200px;
+    height:200px;
+}
+*/
+
+.ui-jqgrid tr.jqgrow td {font-size:10px !important;}
+.ui-jqgrid .ui-jqgrid-htable th {font-size:11px !important; font-weight:bold;}
+.ui-jqgrid .ui-pg-table td {font-size:11px !important; font-weight:bold;}
+
+/*
+*FOR HBOX
+*/
+.col100 { width: 100%; overflow:auto; padding: 0px; }
+.col50L { width: 49%;  float:left; border: 1px none black; padding: 0px; margin: 5px 2px;}
+.col50R { width: 49%;  float:right; border: 1px none red; padding: 0px; margin: 5px 2px;}
+
+.contentLeft{text-align: left;}
+.contentRight{text-align: right;}
+
+.col40L {width: 40%; float:left;  border: 0px;}
+.col60R {width: 60%; float:right; border: 0px; }
+ 
+.col25L { width: 25%;  float: left; border: 1px solid black; padding:  .5em 0em .5em 0em;}
+.col25R { width: 25%;  float: right; border: 1px solid green; padding: .5em 0em .5em 0em;}
+
+.col33L { width: 33%;  float: left; }
+
+.paddingObj{padding:4px;}
+
+.titleIn{ font-family:"Arial";
+ 		 font-size:30px; 
+ 		 font-style:italic;
+		 font-weight:bold;
+		 color:#ff8000;
+		 }
+
+.tabsContainer{padding:	0; overflow:hidden; position:static	!important;  height:100%;}
+.ulContainer {
+	/* used for elements that should not have padding or scrollbars */
+		padding:	0;
+		overflow:	hidden;
+		margin:		0 !important;
+}
+
+.panelsContainer {padding:	0;
+				  overflow:	hidden;
+				  margin: 0 !important;
+				  height:100%; }
+				  
+.hidden {display:	none;}
+	
+label{ font-family:"Arial"; font-size  :12px;}
+
+.labelForm {
+    display: block;
+    float: left;
+    width: 45%;
+    height: 25px;
+    border: 1px solid green;
+}
+
+.ui-layout-pane {
+    border: none !important;
+    overflow: hidden;
+    padding: 0px !important;
+}
+
+/*
+The solution for label width
+label {
+    display: block;
+    float: left;
+    width: 150px;
+}
+*/
+.ui-tabs .ui-tabs-panel{
+   padding: 0;
+   height:100%;
+}
+
+.select{
+    width:150px;
+}
+.ui-paging-info {
+    float: right;
+}
+.gridSliderContainer
+{
+    float: right; padding: 13px 20px 0px 20px; width:250px; font-size:8px;  height:10px;
+   /*background:#ffff00;*/
+}
+
+.ui-slider .ui-slider-handle{
+    height: 1.0em;
+    width:  0.5em;
+}
+.ui-slider-horizontal{
+    height: 0.1em;
+}
+.ui-jqgrid .ui-pg-table td{
+    vertical-align: middle;
+}
+
+.sliderLabel {
+    position: absolute;
+    z-index: 1020;
+    display: block;
+    padding: 3px 8px;
+    font-size: 9px;
+    visibility: visible;
+    margin-top: -2px;
+    bottom:100%;
+    margin-left: -1em;
+}
+
+.ui-jqgrid{
+	width:100%; 
+    margin: 0 auto; 
+    height:100%; 
+    min-width:600px;
+    min-height:200px;
+}
+
+.fluid_style{
+    width:99%; 
+    margin: 0 auto; 
+    height:100%; 
+    min-width:600px;
+    min-height:200px;
+   /* background:#ff0000;*/
+}
+
+.colorBox{
+    background:#d6deef;
+    border: 1px solid #cccccc;
+}
+
+.ColTable {
+    align     :left;
+    text-align: left;
+}
+
+
+
+/*
+DBFORM 
+*/
+
+form.cmxform fieldset {
+  background-color:#ffffff;
+  margin-bottom: 10px;
+  padding: 3px 3px;  
+}
+
+form.cmxform input{
+   width: 45%;
+}
+form.cmxform label {
+  display: inline-block;
+  line-height: 1.8;
+  vertical-align: top;
+}
+
+form.cmxform fieldset li {
+  list-style: none;
+  padding: 3px;
+}
+form.cmxform fieldset fieldset {
+  border: none;
+}
+
+form.cmxform fieldset fieldset label {
+  display: block;
+  width: auto;
+}
+form.cmxform em {
+  font-weight: bold;
+  font-style: normal;
+  color: #f00;
+}
+form.cmxform label {
+  text-align: left;
+  width: 40%; /* Width of labels */
+}
+
+form.cmxform .labelright {
+  text-align: right;
+  width: 100px;
+}
+
+form.cmxform .input200px {
+  width: 350px; 
+}
+
+form.cmxform input[type=submit] {
+  width: auto; 
+}
+
+
+form.cmxform select {
+  width: 50%; 
+}
+
+form.cmxform input {
+  width: 50%; 
+}
+
+form.cmxform fieldset fieldset label {
+  margin-left: 123px; /* Width plus 3 (html space) */
+}
+
+
+
+
+/*
+*FxUploader
+*/
+
+.fxUploader{ 
+    width : 280px;
+    height: 164px;
+    border: 10px solid #E5E5E5;
+    padding: 0px;
+}
+
+.buttonContainer {
+   width:100%;
+   height:30px;
+   padding: 2px;
+}
+
+.btn {
+    width: 130px;
+    background-color: #E5E5E5;
+    border-color: #cccccc;
+    border-radius: 4px 4px 4px 4px;
+    border-style: solid;
+    border-width: 1px;
+    color: #000000;
+    cursor: pointer;
+    display: inline-block;
+    font-size: 12px;
+    margin-bottom: 0;
+    text-align: center;
+    padding: 4px;
+    vertical-align: middle;
+}
+
+
+.fileinput-button {
+    padding: 5px;
+    float: left;
+    margin-right: 4px;
+    overflow: hidden;
+    position: relative;
+}
+.fileinput-button input {
+    direction: ltr;
+    margin: 0;
+    opacity: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    transform: translate(-300px, 0px) scale(4);
+}
+
+.uploadTitle{
+   width:100%;
+   height:15px;
+   background-color: #E5E5E5; 
+}
+.fxDateTime{
+  background-color:#ffffff;
+  width:210px;
+  height:20px;
+  padding-left:2px;
+  padding-top:1px;
+  border: solid;
+  border-color: #cccccc;
+  border-width: 1px;
+  vertical-align:middle;
+}
+
+.ui-datepicker-trigger{
+   border-style: none;
+   background-image:url('icons/calendar.png');
+   background-color:#ffffff;
+   background-repeat:no-repeat;
+   background-position:center; 
+}
+
+.fxDateTime .hasDatepicker{
+  border-style: none; 
+  width:70px;
+}
+
+.fxDateTime .hasTime{
+  border-style: none;
+  width:80px;  
+}
+.fxDateTime .fxDateTimeButton{
+   border-style: none;
+   background-image:url('icons/text_code.png');
+   background-color:#ffffff;
+   background-repeat:no-repeat;
+   background-position:center; 
+   margin: 0;
+   height: 15px; 
+}
+
+.fxDateTime .ui-menu { 
+	position: absolute; 
+	width: 100px; 
+}
+
+.ui-widget-content .jqgrow .ui-row-ltr{
+	
+}
+
+.progress-label {
+    float: left;
+    margin-left: 50%;
+    margin-top: 2px;
+    font-weight: bold;
+    text-shadow: 1px 1px 0 #fff;
+}
+
+.ui-progressbar  {
+	height:15px;
+}
+.ui-dialog .ui-dialog-content{
+    padding :0;
+}
+.ui-controlImage{	
+	cursor: pointer;
+	display: block;
+	width:18px;
+	height:16px;
+}
+/*
+*DOVE DEVE STARE NEL CSS DI DEFAULT DI SIBILLA???
+*/
+.edit{
+    background-image: url("icons/edit.gif");
+}
+.delete{
+    background-image: url("icons/delete.gif");
+}
+.info{
+    background-image: url("icons/info.gif");
+}
+
+#box_error_message{
+	position:absolute;
+	bottom:20px;
+	z-index:1000;
+	color: #D8000C;
+    background-color: #FFBABA;
+    border: 1px solid;
+    margin: 10px 0px;
+    padding:15px 10px 15px 50px;
+    font-family:Arial, Helvetica, sans-serif; 
+    font-size:13px;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,291 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Download Manager Monitor and Control GUI</title>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=7,IE=9" >
+    </head>
+
+	<body>
+	    <div id="box_error_message"></div>
+	    <div id="_tab_manager_" class="tabsContainer">
+		    <ul id="_tab_manager_tabButtons" class="ulContainer">	
+				<li><a href="#ngeo_if_LIST">ngEO Queue List for DM: {DM_ID}</a></li>
+				<li><a href="#ngeo_if_LOGFILE">ngEO LOG FILE</a></li>
+		    </ul>
+	        <!-- wrap tab-panels in ui-layout-content div -->
+		    <div id="_tab_manager_tabPanels" class="panelsContainer">	
+			        <div id="ngeo_if_LIST">
+		                <div class="col100 paddingObj">
+		                    <div class="col50L contentLeft">
+		                        <form id="ngeo_if_downPathForm" class="cmxform contentRight">
+		                            <label for="down_path" class="labelright">DAR Url</label>
+		                            <input type="text" id="down_new_path" name="down_new_path" class="input200px">
+		                            <input keepData="false" type="submit" value="Start Download"  id="__btnDownload__" name="__btnDownload__" class="ui-button ui-widget ui-state-default ui-corner-all"/>
+		                        </form>
+		                         <form id="ngeo_if_downProductPathForm" class="cmxform contentRight" style="padding-top:3px">
+		                            <label for="down_path" class="labelright">Product Url</label>
+		                            <input type="text" id="down_product_new_path" name="down_product_new_path" class="input200px">
+		                            <input keepData="false" type="submit" value="Start Download"  id="__btnProductDownload__" name="__btnProductDownload__" class="ui-button ui-widget ui-state-default ui-corner-all"/>
+		                        </form>
+		                     </div>		              
+		                     <div class="col50R contentRight">
+                               <div class="addMargin">
+			                         <input type="submit" extraForm="ngeo_if_resultForm" value="Pause"  id="__btnPause__" name="__btnPause__" class="ui-button ui-widget ui-state-default ui-corner-all"/>
+			                         <input type="submit" extraForm="ngeo_if_resultForm" value="Resume"  id="__btnResume__" name="__btnResume__" class="ui-button ui-widget ui-state-default ui-corner-all"/>
+			                         <input type="submit" extraForm="ngeo_if_resultForm" value="Cancel"  id="__btnStop__" name="__btnStop__" class="ui-button ui-widget ui-state-default ui-corner-all"/>
+			                         <input type="submit" extraForm="ngeo_if_resultForm" value="Change priority"  id="__btnChangePos__" name="__btnChangePos__" class="ui-button ui-widget ui-state-default ui-corner-all"/>
+			                         <input type="submit" onClick="window.open('../DownloadManager/NGEO_DM_ONLINE_MANUAL')" value="Help" class="ui-button ui-widget ui-state-default ui-corner-all">
+			                  </div>
+			                  <div class="addMargin">
+			               		  <input type="submit" extraForm="ngeo_if_resultForm" value="Edit Configuration"  id="__btnEditConf__" name="__btnEditConf__" class="ui-button ui-widget ui-state-default ui-corner-all"/>
+			                      <input type="submit" extraForm="ngeo_if_resultForm" value="Clear terminated downloads"  id="__btnPurgeDB__" name="__btnPurgeDB__" class="ui-button ui-widget ui-state-default ui-corner-all"/>
+			                      <input type="submit" extraForm="ngeo_if_resultForm" value="Reset Statistics"  id="__btnResetStatistics__" name="__btnResetStatistics__" class="ui-button ui-widget ui-state-default ui-corner-all"/>
+			                  </div>
+			                  <div class="addMargin" style="font-weight:bold">
+			                   		<a href="../DownloadManager/NGEO_DM_ONLINE_MANUAL" target="_blank">Help</a>
+			                   </div>
+			                  <div id="DM_running" class="addMargin" style="font-weight:bold"></div>
+		                    </div>
+		                 </div>
+		                 <div class="col100 paddingObj">
+			                 <div class="col50L">
+			                  <div class="addMargin">
+				                <input type="submit" value="Statistics" id="showDataCenterButton" class="ui-button ui-widget ui-state-default ui-corner-all"/>
+								<div id="serverData" style="display: none;">
+								  <p class="acs_error">This is the paragraph to end all paragraphs. You should feel</p>
+								</div>
+							  </div>
+			                </div>
+			             </div>
+		           <form id="ngeo_if_resultForm">
+		           		<div class="wid99" >
+		                   <input value='Select All'  role='checkbox' id="cb_ngeo_if_grid1" class='ui-button ui-widget ui-state-default ui-corner-all' type='button'/>
+	               	       <input value="Invert Selection"   type="button" class="ui-button ui-widget ui-state-default ui-corner-all" id="cbinv_ngeo_if_grid1" role="checkbox">             
+	               	    </div>
+	               		<div id="ngeo_if_grid_container_" class="fluid_style"> 
+	                       <table id="ngeo_if_grid" width="100%" class="scroll" cellpadding="0" cellspacing="0"></table> 
+	                       <div id="ngeo_if_gridpager" class="scroll" style="text-align:rigth"></div> 
+	                  </div>
+	                   <div class="wid99" >
+	                       <input value='Select All'  role='checkbox' id="cb_ngeo_if_grid2" class='ui-button ui-widget ui-state-default ui-corner-all' type='button'/>
+                           <input value="Invert Selection"  type="button" class="ui-button ui-widget ui-state-default ui-corner-all" id="cbinv_ngeo_if_grid2" role="checkbox">                              
+	                  </div>   
+	              </form>
+				</div>
+				<div id="ngeo_if_LOGFILE">
+				      <div class="logClass" id="logText"></div>
+				</div>
+		    </div>
+	    </div>
+		<form  method="POST" id="exportForm" enctype="multipart/form-data" action="" class='hidden'>
+		   <input type="hidden" name="acs_sibAction" id="acs_sibAction" value="" />
+		</form>     
+	</body>
+     
+    <link href="webjars/ACSJavascriptLib/css/smoothness/jquery-ui-1.9.0.custom.css" type="text/css" rel="stylesheet">
+        
+    <link rel='stylesheet' href='webjars/ACSJavascriptLib/css/ui.jqgrid.css'>
+     
+    
+    <link href="DownloadManager_javascript/css/layout-default-latest.css" type="text/css" rel="stylesheet">
+    <link href="webjars/ACSJavascriptLib/css/acs_components.css" rel="stylesheet">
+    
+    <link href="DownloadManager_javascript/css/custom.css" type="text/css" rel="stylesheet">
+    <script language="javascript" type="text/javascript">
+   		var requireBasePath="webjars/ACSJavascriptLib/libs/";
+	</script>
+    <script src="webjars/ACSJavascriptLib/libs/require/require.js"></script>
+    <script type="text/javascript" src="webjars/ACSJavascriptLib/main.js"></script>
+    
+    <script language="javascript" type="text/javascript"> 
+          /*
+           *Initialize HTML
+           */          
+          var startPayloadData={"classname":"nGEo","main_if":"ngEOManager"};         
+          require(["jquery","acs_mainCanvas"], function($) {
+          
+          
+          var server_opt=$.toJSON({"goToServerEvent":false,
+        	                 "callMethodAndSetProperties":[{objName:"serverData",methodName:"slideToggle",args: "slow" }]
+           });
+    
+          var opt=$.toJSON({"goToServerEvent":false,
+                             "callMethodAndSetProperties":[{objName:"cb_ngeo_if_grid",methodName:"trigger",args: "click" }]
+           });
+           
+           var optinv=$.toJSON({"goToServerEvent":false,
+               "callMethodAndSetProperties":[{objName:"cbinv_ngeo_if_grid",methodName:"trigger",args: "click" }]});
+           
+           
+          // $.toJSON({tab_switch_notification:{ngeo_if_LOGFILE:true}})
+              
+             var actionlistArr=[{"command":"INITIALIZE_INTERFACE","interfaceClass":"acs_sibMainWindow","interfaceId":"_tab_manager_","targetId":"_tab_manager_","parentId":"null",
+                  "payloads":{ "libName":"jQuery", "objectType":"tabs", "options": $.toJSON({"setIntervalForPanel":{"ngeo_if_LOGFILE":{"time":5}}})}},//];
+                   {"command":"ADDINTEFACE","interfaceClass":"ngeo_if_LIST","targetId":"ngeo_if_LIST","interfaceId":"ngeo_if_LIST","parentId":null,
+                   "payloads":{"childrenOptions":{
+                   "showDataCenterButton":{"libName":"jQuery","objectType":"acs_button","options":server_opt},
+                   "cb_ngeo_if_grid1":{"libName":"jQuery","objectType":"acs_button","options":opt},
+                   "cb_ngeo_if_grid2":{"libName":"jQuery","objectType":"acs_button","options":opt},
+                   "cbinv_ngeo_if_grid1":{"libName":"jQuery","objectType":"acs_button","options":optinv},
+                   "cbinv_ngeo_if_grid2":{"libName":"jQuery","objectType":"acs_button","options":optinv},
+                   "logText":{"libName":"jQuery","objectType":"acs_tailer","options":$.toJSON({"maxNumberOfRow":500,parentScrollableObj:"body,html"})},
+                   
+                 
+                   "ngeo_if_grid": { "libName":"jQuery", "objectType":"jqGrid", "options":
+                    $.toJSON({sortable:true
+                             ,jqGridContainerName:{"type":"tabs","containerName":"_tab_manager_","panelName":"ngeo_if_LIST","checkTabActive":true}
+                             ,refreshTimerValue:1
+                             ,showRefreshSlider:true
+                             ,refreshSliderLabel:"(seconds)"
+                             ,showCloseButton:false
+                             ,height:'auto'                 
+                             ,multiselect: true
+                             ,multiselectWidth: 40
+                             ,multiSelCheckBox:false
+                             ,multiSelectButtonHidden:true                        
+                             //,caption:'Table'
+                             ,colNames:[]
+                             ,colModel:[
+                                 {align:'left'
+                                   ,hidedlg:true
+                                   ,hidden:true
+                                   ,index:'id'
+                                   ,jsonmap:''
+                                   ,key: true
+                                   ,label:'id'
+                                   ,name:'id'
+                                   , resizable:true  ,search:false  , sortable:true  , sorttype:'text' , width:30},
+                                   {align:'left'
+                                    ,hidedlg:true
+                                    ,hidden:true
+                                    ,index:'gid'
+                                    ,jsonmap:''
+                                    ,key: false
+                                    ,label:'gid'
+                                    ,name:'gid'
+                                   , resizable:true  ,search:false  , sortable:true  , sorttype:'text' , width:30},
+                                   {align:'left'
+                                     ,hidedlg:false
+                                     ,hidden:false
+                                     ,index:'filename'
+                                     ,jsonmap:''
+                                     ,key: false
+                                     ,label:'Product Name'
+                                     ,name:'filename'
+                                     ,resizable:true  ,search:true  
+                                     ,searchoptions: {sopt: ['cn']}
+                                     ,sortable:true  , sorttype:'text'     , width:250},                                   
+                                   { align:'left'
+                                     ,hidedlg:false
+                                     ,hidden:true
+                                     ,index:'network'
+                                     ,jsonmap:''
+                                     ,key: false
+                                     ,label:'Network'
+                                     ,name:'network'
+                                   , resizable:true  ,search:false  , sortable:true  , sorttype:'text', width:50 },
+                                   { align:'left'
+                                     ,hidedlg:false
+                                     ,hidden:false
+                                     ,index:'filesize'
+                                     ,jsonmap:''
+                                     ,key: false
+                                     ,label:'Total Product Size'
+                                     ,name:'filesize'
+                                   , resizable:true  ,search:false  , sortable:true  , sorttype:'text'     , width:70},
+                                   { align:'left'
+                                     ,formatter:"progressbar"    ,hidedlg:false
+                                     ,hidden:false
+                                     ,index:'progress'
+                                     ,jsonmap:''
+                                     ,key: false
+                                     ,label:'%'
+                                     ,name:'progress'
+                                   , resizable:true  ,search:false  , sortable:true  , sorttype:'progressbar'     , width:80    },
+                                   { align:'left'
+                                     ,hidedlg:true
+                                     ,hidden:true
+                                     ,index:'filesource'
+                                     ,jsonmap:''
+                                     ,key: false
+                                     ,label:'DAR Source'
+                                     ,name:'filesource'
+                                     ,resizable:true  ,search:false  , sortable:true  , sorttype:'text' , width:150},
+                                   { align:'left'
+                                     ,formatter:"date"  ,formatoptions: { srcformat : 'Y-m-d H:i:s',newformat : 'd-m-Y H:i:s'}  ,hidedlg:false
+                                     ,hidden:false
+                                     ,index:'ageNew'
+                                     ,jsonmap:''
+                                     ,key: false
+                                     ,label:'Download Start'
+                                     ,name:'ageNew'
+                                   , resizable:true  
+                                    ,search:true  
+                                    ,sortable:true  
+                                    ,sorttype:'date'     
+                                    ,width:60
+                                    ,stype:'date'
+                                    ,searchoptions: {sopt: ['ge'], dataInit:"datePick", showButtonPanel: true, dateFormat: "d-m-y"} },                      
+                                    { align:'left'
+                                    ,editoptions:{"value":{"0":"ALL","1":"RUNNING","2":"WAITING","3":"PAUSED","4":"IN_ERROR","5":"COMPLETED","6":"CANCELLED","7":"PROCESSING"}}
+                                     ,searchoptions:{"value":{"0":"ALL","1":"RUNNING","2":"WAITING","3":"PAUSED","4":"IN_ERROR","5":"COMPLETED","6":"CANCELLED","7":"PROCESSING"},"defaultValue":"0"}  
+                                     ,editable:true  
+                                     ,edittype:'text'    ,formatter:"select"    ,hidedlg:false
+                                     ,hidden:false
+                                     ,index:'status_id'
+                                     ,jsonmap:''
+                                     ,key: false
+                                     ,label:'Status'
+                                     ,name:'status_id'
+                                   , resizable:true  ,search:true  ,stype:'select', sortable:true, sorttype:'select', width:60},
+                                   {align:'left'
+                                     ,hidedlg:true
+                                     ,hidden:true
+                                     ,index:'selectedRow'
+                                     ,jsonmap:''
+                                     ,key: false
+                                     ,label:'selectedRow'
+                                     ,name:'selectedRow'
+                                     ,formatter:"rowHighlight"
+									 ,formatoptions: { columnName : 'ALL'}
+									 ,resizable:true  ,search:false  ,
+									 sortable:true  , sorttype:'text' ,
+									 width:30},] 
+                           ,pager:'#ngeo_if_gridpager'
+                           ,sortname: 'filesource'
+                           ,grouping:true
+                           ,groupingView : { groupField : ['filesource'], groupColumnShow : [false], groupText : ['<b>{0} - {1} Product(s)</b>'] }
+                                  
+                    })//options toJson
+                 }//grid
+                }//childrenOptions
+              }//paylods
+            }];//interface-arraylist
+      
+             var gatewayURL=window.location.pathname + "DownloadsMonitorServlet";
+              var mainCanvas=new CanvasView({"localInitialize":actionlistArr,"serverUrl":gatewayURL,"errorMessage":"DM Server not responding: please close this web page"});
+              
+              /*
+              *acs_mainInteface
+              */
+              
+              var grid=$('#'+'ngeo_if_grid');
+              grid.jqGrid('navGrid','#ngeo_if_gridpager',{    
+                          view:false,
+                          del:false,
+                          add:false,
+                          edit:false,
+                          search:false,
+                          cloneToTop:false,
+                          refresh:false
+                      },{},{},{},{},{});  
+             
+          });  
+          
+          
+   </script>   
+    
+    
+    
+    

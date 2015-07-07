@@ -1,0 +1,129 @@
+1
+ TITLE
+ index.htm
+2
+ DOCUMENT STATUS SHEET
+ document_status_sheet.htm
+3
+ INTRODUCTION
+ introduction_1.htm
+4
+ PURPOSE
+ purpose.htm
+5
+ SCOPE
+ scope.htm
+6
+ APPLICABLE AND REFERENCE DOCUMENTS
+ applicable_and_reference_documents.htm
+7
+ APPLICABLE DOCUMENTS
+ applicable_documents.htm
+8
+ REFERENCE DOCUMENTS
+ reference_documents.htm
+9
+ TERMS, DEFINITIONS AND ABBREVIATED TERMS
+ terms__definitions_and_abbreviated_terms.htm
+10
+ DEFINITIONS
+ definitions.htm
+11
+ ACRONYMS AND DEFINITIONS
+ acronyms_and_definitions.htm
+12
+ DESCRIPTION OF THE USER MANUAL
+ description_of_the_user_manual.htm
+13
+ HOW TO USE THIS MANUAL
+ how_to_use_this_manual.htm
+14
+ TYPICAL READERS CHARACTERISTICS
+ typical_readers_characteristics.htm
+15
+ PRODUCT DESCRIPTION
+ product_description.htm
+16
+ INTRODUCTION
+ introduction_2.htm
+17
+ HOW TO INSTALL THE DOWNLOAD MANAGER
+ how_to_install_the_download_manager.htm
+18
+ CONVENTION USED
+ convention_used.htm
+19
+ SOFTWARE/HARDWARE PREREQUISITES
+ software_hardware_prerequisites.htm
+20
+ INSTALLATION
+ installation.htm
+21
+ LINUX PLATFORM
+ linux_platform.htm
+22
+ WINDOWS PLATFORM
+ windows_platform.htm
+23
+ OSX PLATFORM
+ osx_platform.htm
+24
+ UNINSTALLATION  (ALL O.S.)
+ uninstallation___all_o_s__.htm
+25
+ FUNCTIONAL DESCRIPTION
+ functional_description.htm
+26
+ EXAMPLE SCENARIO 1: LAUNCHING THE DOWNLOAD MANAGER LOCALLY
+ example_scenario_1__launching_the_download_manager_locally.htm
+27
+ PRECAUTIONS AND WARNING MESSAGES
+ precautions_and_warning_messages_1.htm
+28
+ EXAMPLES AND PROCEDURES
+ examples_and_procedures_1.htm
+29
+ POTENTIAL ERRORS, THEIR CAUSES AND SOLUTIONS
+ potential_errors__their_causes_and_solutions_1.htm
+30
+ EXAMPLE SCENARIO 2: MANAGING DOWNLOADS OF DARS
+ example_scenario_2__managing_downloads_of_dars.htm
+31
+ PRECAUTIONS AND WARNING MESSAGES
+ precautions_and_warning_messages_2.htm
+32
+ EXAMPLES AND PROCEDURES
+ examples_and_procedures_2.htm
+33
+ POTENTIAL ERRORS, THEIR CAUSES AND SOLUTIONS
+ potential_errors__their_causes_and_solutions_2.htm
+34
+ 	DOWNLOAD MANAGER CLI
+ _download_manager_cli.htm
+35
+ LAUNCH THE CLI (ALL O.S.)
+ launch_the_cli__all_o_s__.htm
+36
+ MAIN COMMANDS
+ main_commands.htm
+37
+ CLI COMMANDS
+ cli_commands.htm
+38
+ DOWNLOAD MANAGER GRAPHIC USER INTERFACE (GUI)
+ download_manager_graphic_user_interface__gui_.htm
+39
+ INTRODUCTION
+ introduction_3.htm
+40
+ USAGE OF DOWNLOAD MANAGER WITH GUI
+ usage_of_download_manager_with_gui.htm
+41
+ COMMANDS
+ commands.htm
+42
+ FILES TABLE
+ files_table.htm
+43
+ DOWNLOAD MANAGER TOOLS
+ download_manager_tools.htm

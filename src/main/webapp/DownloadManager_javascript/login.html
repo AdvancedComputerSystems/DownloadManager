@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Download Manager Login form</title>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=7,IE=9" >
+    </head>
+
+	<body>
+
+		<!-- Primary Page Layout -->
+
+		<div class="container" id="_tab_manager_" name="_tab_manager_">
+            <div style="text-align:center; padding-top: 50px;">
+                <form method="POST" name="ngEOManager" id="ngEOManager">
+                    <h2>Login</h2>
+                    <p><input type="text" placeholder="Username" name="username"></p>
+                    <p><input type="password" placeholder="Password" name="password"></p>
+                    <input type="submit" value="Login"  id="__btnLogin__" name="__btnLogin__" class="ui-button ui-widget ui-state-default ui-corner-all"/>
+                </form>
+            </div>
+            <!--<div style="text-align:center; padding-top: 50px; color: #rr0000;">
+                    <h2>__ERROR_MESSAGE__</h2>
+            </div>
+            -->
+        </div> 
+	</body>
+     
+    <link href="webjars/ACSJavascriptLib/css/smoothness/jquery-ui-1.9.0.custom.css" type="text/css" rel="stylesheet">
+        
+    <link rel='stylesheet' href='webjars/ACSJavascriptLib/css/ui.jqgrid.css'>
+     
+    
+    <link href="DownloadManager_javascript/css/layout-default-latest.css" type="text/css" rel="stylesheet">
+    <link href="webjars/ACSJavascriptLib/css/acs_components.css" rel="stylesheet">
+    
+    <link href="DownloadManager_javascript/css/custom.css" type="text/css" rel="stylesheet">
+    <script language="javascript" type="text/javascript">
+   		var requireBasePath="webjars/ACSJavascriptLib/libs/";
+	</script>
+    <script src="webjars/ACSJavascriptLib/libs/require/require.js"></script>
+    <script type="text/javascript" src="webjars/ACSJavascriptLib/main.js"></script>
+   
+  <script language="javascript" type="text/javascript"> 
+          /*
+           *Initialize HTML
+           */       
+         var startPayloadData={"classname":"nGEo","main_if":"ngEOManager"};                 
+          require(["jquery","acs_mainCanvas"], function($) {
+        	  var gatewayURL=window.location.pathname + "DownloadsMonitorServlet";
+              
+              var actionlistArr=[{"command":"INITIALIZE_INTERFACE","interfaceClass":"acs_sibMainWindow","interfaceId":"_tab_manager_","targetId":"_tab_manager_","parentId":"null",
+                  "payloads":{ "libName":"jQuery", "objectType":"acs_mainInteface", "options":{}}},
+                  {"command":"ADDINTEFACE","interfaceClass":"ngEOManager","targetId":"ngEOManager","interfaceId":"ngEOManager","parentId":null,
+                      "payloads":{"childrenOptions":{}}}];
+            
+              
+              var mainCanvas=new CanvasView({"localInitialize":actionlistArr,"serverUrl":gatewayURL,"errorMessage":"DM Server not responding: please close this web page"});
+          });           
+   </script>   
+    
+    
+    
+    

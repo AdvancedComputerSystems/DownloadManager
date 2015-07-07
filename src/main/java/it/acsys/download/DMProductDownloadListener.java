@@ -1,0 +1,242 @@
+package it.acsys.download;
+
+import int_.esa.eo.ngeo.downloadmanager.exception.DMPluginException;
+import int_.esa.eo.ngeo.downloadmanager.plugin.EDownloadStatus;
+import int_.esa.eo.ngeo.downloadmanager.plugin.IDownloadProcess;
+import int_.esa.eo.ngeo.downloadmanager.plugin.IProductDownloadListener;
+import it.acsys.download.ngeo.database.DatabaseUtility;
+
+import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Properties;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
+import org.apache.log4j.Logger;
+
+import com.siemens.pse.umsso.client.UmssoCLCore;
+import com.siemens.pse.umsso.client.UmssoCLCoreImpl;
+import com.siemens.pse.umsso.client.UmssoCLInput;
+import com.siemens.pse.umsso.client.UmssoHttpPost;
+
+public class DMProductDownloadListener implements IProductDownloadListener {
+	
+	private static Logger log = Logger.getLogger(DMProductDownloadListener.class);
+	private static Properties configProperties = null;
+	
+	private static HashMap<String, IDownloadProcess> cache = null;
+	private String processIdentifier;
+	
+	static {
+        try {
+        	String configPath = System.getProperty("configPath"); 
+        	File configFile = new File(configPath);
+        	InputStream stream  = new FileInputStream(configFile);
+        	configProperties = new Properties();
+        	configProperties.load(stream);
+        	stream.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+	}
+	
+	public DMProductDownloadListener(String processIdentifier, HashMap<String, IDownloadProcess> cache) {
+		LogUtility.setLevel(log);
+		this.processIdentifier = processIdentifier;
+		this.cache = cache;
+	}
+	
+	@Override
+	public void progress(Integer progress, Long completedLength, EDownloadStatus status,
+			String message) {
+		if(status.equals(EDownloadStatus.PAUSED)) {
+			int currStatuId = DatabaseUtility.getInstance().getStatusId(processIdentifier);
+			if(currStatuId == 2) {
+				status = EDownloadStatus.NOT_STARTED;
+			}
+		}
+		if(status.equals(EDownloadStatus.IN_ERROR)) {
+			log.error("message " + message);
+			if(message.contains(configProperties.getProperty("error_message"))) {
+				log.fatal(message);
+			}
+		}
+		
+		if(status.equals(EDownloadStatus.COMPLETED)) {
+			progress = 100;
+		}
+		DatabaseUtility.getInstance().progress(progress, completedLength, status, message, processIdentifier);
+		
+		try {
+			if(status.equals(EDownloadStatus.COMPLETED) || status.equals(EDownloadStatus.IN_ERROR) 
+					|| status.equals(EDownloadStatus.CANCELLED)) {			
+						boolean isTemporaryDir = Boolean.valueOf((String) configProperties.get("isTemporaryDir"));
+						IDownloadProcess process = (IDownloadProcess) cache.get(processIdentifier);
+						if(isTemporaryDir && process != null) {
+							File[] files = process.getDownloadedFiles();
+			//						POST PROCESS
+							if(files != null) {
+								for(int n=0; n<files.length; n++) {
+									File oldFile =  new File(files[n].getAbsolutePath());
+									if(status.equals(EDownloadStatus.CANCELLED)) {
+										oldFile.delete();
+									} else {
+										String[] parts = files[n].getAbsolutePath().split("TEMPORARY/");
+										File newFile = null;
+										if(parts[1].indexOf(File.separator) != -1) {
+											newFile = new File(parts[0] + parts[1].substring(0, parts[1].indexOf(File.separator)));
+											File oldDir = new File(parts[0] + "TEMPORARY/" + parts[1].substring(0, parts[1].indexOf(File.separator)));
+											if(oldDir.exists()) {
+												FileUtils.copyDirectory(oldDir, newFile);
+												FileUtils.deleteDirectory(oldDir);
+											}
+										} else {
+											newFile = new File(parts[0]);
+											if(oldFile.exists()) {
+												FileUtils.copyFileToDirectory(oldFile, newFile);
+												FileUtils.deleteQuietly(oldFile);
+											}
+										}
+									}
+								}
+								
+							}
+							
+							
+						}
+//						IF FILESOURCE != REALURI DELETE TEMPORARY METALINK FILE
+						String filesource = DatabaseUtility.getInstance().getFileNameById(processIdentifier);
+						if(!DatabaseUtility.getInstance().getRealUriById(processIdentifier).equals(filesource)) {
+							String fileName =  new URL(filesource).getFile();
+							File metalinkFile = new File("webapps/" + fileName);
+							metalinkFile.delete();
+						}
+						
+						cache.remove(this.processIdentifier);
+						//IF ALL FILES COMING FROM THE SAME DAR HAVE BEEN COMPLETED SEND MONITORING URL REQUEST
+						String monitoringURL = DatabaseUtility.getInstance().getMonitoringURLByProcessIdentifier(processIdentifier);
+						String notificationStatus = "COMPLETED";
+						if(status.equals(EDownloadStatus.IN_ERROR)) {
+							notificationStatus = "ERROR";
+						}
+						if(!monitoringURL.equalsIgnoreCase("MANUAL_DOWNLOAD")) {
+							sendDarNotification(monitoringURL, notificationStatus, progress);
+						}
+							
+//						UPDATE HOST AND PLUGIN STATISTICS
+						DatabaseUtility.getInstance().updateDownloadStatisctics(this.processIdentifier);
+						DatabaseUtility.getInstance().updatePluginStatistics(this.processIdentifier);
+						DatabaseUtility.getInstance().updateHostStatistics(this.processIdentifier);
+			}
+		} catch(Exception ex) {
+			ex.printStackTrace();
+			log.error(ex.getMessage());
+		} 
+	}
+	
+	
+	@Override
+	public void productDetails(String filename, Integer numFiles, Long totalLength) {
+		DatabaseUtility.getInstance().updateProductDetails(processIdentifier, filename, numFiles, totalLength);
+	}
+
+	public String getProcessIdentifier() {
+		return processIdentifier;
+	}
+
+	@Override
+	public void progress(Integer progress, Long completedLength, EDownloadStatus status,
+			String message, DMPluginException exc) {
+		if(exc != null) {
+			String[] fatalsEceptions = ((String) configProperties.getProperty("fatalExceptions")).split("\\|\\|");
+			if(Arrays.asList(fatalsEceptions).contains(exc.getClass().getSimpleName())) {
+				log.fatal("Download Manager Exception: " + exc.getMessage());
+			} else {
+				log.error("Download Manager Exception: " + exc.getMessage());
+			}
+		}	
+		
+		this.progress(progress, completedLength, status, message);
+		
+	}
+	
+	private String getProductDownloadNotification() {
+    	return "<ngeo:ProductDownloadNotification><ngeo:ProductAccessURL>{product_access_URL}</ngeo:ProductAccessURL>"+
+				"<ngeo:productDownloadStatus>{product_download_status}</ngeo:productDownloadStatus>"+
+				"<ngeo:productDownloadMessage>{product_download_message}</ngeo:productDownloadMessage>"+
+				"<ngeo:productDownloadProgress>{product_download_progress}</ngeo:productDownloadProgress>"+
+				"<ngeo:productDownloadSize>{product_download_size}</ngeo:productDownloadSize></ngeo:ProductDownloadNotification>";
+    }
+	
+	private String prepareMonitoringURLRequest(String DMId, String status, Integer progress) {
+    	String filecontent = "";
+    	try {
+	    	FileInputStream wsRequest = new FileInputStream("./templates/DMDARMonitoring.xml");
+	    	DataInputStream in = new DataInputStream(wsRequest);
+	    	BufferedReader br = new BufferedReader(new InputStreamReader(in));
+	    	StringBuffer sb = new StringBuffer();
+	    	String strLine;
+	    	while((strLine = br.readLine()) != null) {
+	    		sb.append(strLine);
+	    	}
+	    	filecontent = sb.toString();
+	    	in.close();
+	    	filecontent = filecontent.replace("{DM_ID}", DMId);
+	    	filecontent = filecontent.replace("{READY_PRODUCTS_OR_ALL}", "READY");
+	    	String productsDownloadNotification = "";
+	    	//SELECT FROM DB DOWNLOAD TO NOTIFY TO WS
+	    	
+	    	String productDownloadNotification = "";
+	    
+    		productDownloadNotification = this.getProductDownloadNotification();
+	    	productDownloadNotification = productDownloadNotification.replace("{product_access_URL}", DatabaseUtility.getInstance().getFileNameById(processIdentifier));
+			productDownloadNotification = productDownloadNotification.replace("{product_download_status}", status);
+			productDownloadNotification = productDownloadNotification.replace("{product_download_progress}", String.valueOf(progress));
+			productDownloadNotification = productDownloadNotification.replace("{product_download_message}","");
+			productDownloadNotification = productDownloadNotification.replace("{product_download_size}", DatabaseUtility.getInstance().getFileSizeById(processIdentifier));
+			productDownloadNotification = productsDownloadNotification += productDownloadNotification; 
+	    	
+	    
+			filecontent = filecontent.replace("{products_download_notification}", productsDownloadNotification);
+    	} catch(IOException ex) {
+    		//ex.printStackTrace();
+    		log.error("Error in preparing MonitoringURLRequest " + ex.getMessage());
+    	}
+    	return filecontent;
+			
+    }
+	
+	private void sendDarNotification(String darUrl, String status, Integer progress) {
+		UmssoCLInput input = new UmssoCLInput();
+		UmssoCLCore clCore = UmssoCLCoreImpl.getInstance();
+		
+		
+		UmssoHttpPost darMethod = new UmssoHttpPost(darUrl);
+	    try {
+	    		
+	      String DARRequest = this.prepareMonitoringURLRequest(configProperties.getProperty("DMIdentifier"), status, progress);
+    	  log.debug("*************Sending complete notification to " + darUrl + "*************");
+    	  log.debug(DARRequest);
+	      log.debug("*************END OF complete notification to " + darUrl + "*************");
+	      StringEntity entity = new StringEntity(DARRequest, ContentType.TEXT_XML);
+	      darMethod.setEntity(entity);
+    	  darMethod.addHeader("Content-Type", "application/xml");
+    	  input.setAppHttpMethod(darMethod);
+		  clCore.processHttpRequest(input);
+		  
+	    }  catch(Exception e) {
+	        log.error("Can not get DARs");
+	    } finally {
+	    	darMethod.releaseConnection();
+	    } 
+    }
+}

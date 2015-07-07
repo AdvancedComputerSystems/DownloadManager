@@ -1,0 +1,2 @@
+{SimpleDataAccessRequest":{"requestStage": "confirmation","downloadLocation": {"DownloadManagerID":
+"DM_ACS","DownloadDirectory":"$HOME/DM/DAR"},"productURLs":[{"productURL":"http://ngeo-dev.terradue.com/ngeo/catalogue/ASA_IM__0P_ENVISAT-1_ASAR_IM/product?id=ASA_IM__0PNPDK20100813_102452_000000342092_00051_44193_3037.N1"}]}}

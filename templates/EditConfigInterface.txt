@@ -1,0 +1,48 @@
+<div id="ngeo_if_EDITCONFIG" title="Edit Configuration" align="center">
+<form id="ngeo_if_editConfigForm" class="cmxform" >
+<fieldset>
+   <li><label for="username">UMSSO username *</label><input type="text" id="username" name="username" value="{username_value}"/></li>
+   <li><label for="password">UMSSO password *</label><input type="password" id="password" name="password" value="{password_value}"/></li>
+   <li><label for="confirm_pass">Confirm Password *</label><input type="password" id="confirm_pass" name="confirm_pass" value="{confirm_pass_value}"/></li>
+   <li><label for="server_url">Server Urls (comma separated list)</label><input type="text" id="servers_url" name="servers_url" value="{server_urls_value}"/></li>
+   <li><label for="down_path">Download Directory Path</label><input type="text" id="down_path" name="down_path" value="{down_path_value}"/></li>
+   <li><label for="log_level">Log level</label>
+        <select id="log_level" name="log_level">
+                <option {selected_debug}  value="debug">DEBUG</option>
+                <option {selected_info}  value="info">INFO</option>
+                <option {selected_error} value="error">ERROR</option>
+        </select></li>
+   <li><label for="down_numb">Parallel download number</label><input type="text" id="down_numb" name="down_numb" value="{down_numb_value}"/></li>
+<li><label for="down_identifier">DM identifier *</label><input type="text"
+id="down_identifier" name="down_identifier" value="{down_identifier}"/></li>
+<li><label for="down_friendly_name">DM friendly name *</label><input type="text" id="down_friendly_name" name="down_friendly_name" value="{down_friendly_name}"/></li>
+   <li><label for="cli_username">CLI Username</label><input type="text" id="cli_username" name="cli_username" value="{cli_username_value}"/></li>
+   <li><label for="cli_password">CLI Password</label><input type="password" id="cli_password" name="cli_password" value="{cli_password_value}"/></li>
+   <li><label for="confirm_cli_pass">Confirm Password</label><input type="password" id="confirm_cli_pass" name="confirm_cli_pass" value="{confirm_cli_pass_value}"/></li>
+<li><label for="accept_certificate">Accept self-signed certificates *</label>
+        <select id="accept_certificate" name="accept_certificate" title="Suggested choice is YES">
+                <option {certficate_true}  value="true">YES</option>
+                <option {certifcate_false}  value="false">NO</option>
+        </select>
+</li>
+			<li>
+	            <label for="fatal_exceptions">Error conditions notified by e-mail *</label>	            
+	            <div class="checkbox_div">
+		            <div class="checkbox">
+		          		<label><input type="checkbox" id="FileSystemWriteException" name="FileSystemWriteException" value="FileSystemWriteException" {checked_FileSystemWriteException}/>File Read/Write</label>
+		        	</div>
+		        	<div class="checkbox">
+		          		<label><input type="checkbox" id="AuthenticationException" name="AuthenticationException" value="AuthenticationException" {checked_AuthenticationException}/>Authentication</label>
+		        	</div>
+		        	<div class="checkbox">
+		          		<label><input type="checkbox" id="ProductUnavailableException" name="ProductUnavailableException" value="ProductUnavailableException" {checked_ProductUnavailableException}/>Product not available</label>
+		        	</div>
+	        	</div>
+        	</li>
+</fieldset>
+<table>
+<tr>
+<td width="80%"><font size="1px">Changes to fields with * are active after a DAGC restart</font></td>
+<td width="20%"><input type="submit" value="Save Configuration"  id="__btnEditSaveConfig__" name="__btnEditSaveConfig__"/></td></form>
+</tr>
+</table>
