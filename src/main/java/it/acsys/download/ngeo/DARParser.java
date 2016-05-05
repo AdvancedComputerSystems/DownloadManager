@@ -1,110 +1,72 @@
 package it.acsys.download.ngeo;
 
+import it.acsys.download.ConfigUtility;
 import it.acsys.download.LogUtility;
 import it.acsys.download.ngeo.database.DatabaseUtility;
 
-import java.io.StringBufferInputStream;
+import java.io.ByteArrayInputStream;
+import java.util.List;
 
 import javax.servlet.ServletContext;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.UnmarshalException;
+import javax.xml.bind.Unmarshaller;
 
 import org.apache.log4j.Logger;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
+
+import _int.esa.eo.ngeo.iicd_d_ws._1.DataAccessMonitoringResp;
+import _int.esa.eo.ngeo.iicd_d_ws._1.ProductAccessStatusType;
+import _int.esa.eo.ngeo.iicd_d_ws._1.DataAccessMonitoringResp.ProductAccessList;
+import _int.esa.eo.ngeo.iicd_d_ws._1.DataAccessMonitoringResp.ProductAccessList.ProductAccess;
 
 public class DARParser {
 	private static Logger log = Logger.getLogger(DARParser.class);
 
 	
-	public void parse(String content, String darURL, int wsId, ServletContext context) {
-		
+	public String parse(String content, String darURL, int wsId, ServletContext context) {
 		LogUtility.setLevel(log);
 		String url = null;
+		String darStatus = "IN_PROGRESS";
 		  try {
-			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-			Document doc = dBuilder.parse(new StringBufferInputStream(content));
-			doc.getDocumentElement().normalize();
-	 
-			//DAR FROM WS
-			log.debug("Root element :" + doc.getDocumentElement().getNodeName());
-			NodeList nList = doc.getElementsByTagName("ProductAccess");
-			String darStatus = getTagValue("MonitoringStatus", doc.getDocumentElement());
-			doc.getElementsByTagName("MonitoringStatus").item(0).getNodeValue();
+			JAXBContext jaxbContext = JAXBContext.newInstance(DataAccessMonitoringResp.class);
+			Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
+			DataAccessMonitoringResp darResponse = (DataAccessMonitoringResp) jaxbUnmarshaller.unmarshal(new ByteArrayInputStream(content.getBytes()));
+			darStatus = darResponse.getMonitoringStatus();
 			DatabaseUtility.getInstance().updateDarStatus(darURL, darStatus);
-			log.debug("-----------------------");
-			
-			for (int temp = 0; temp < nList.getLength(); temp++) {
-			   Node nNode = nList.item(temp);
-			   if (nNode.getNodeType() == Node.ELEMENT_NODE) {
-	 
-			      Element eElement = (Element) nNode;
-			      url = getTagValue("ProductAccessURL", eElement);
-			      
-				  if(url.indexOf("?") != -1) {
-						String queryUri = url.trim().split("\\?")[1].replace("{", "%7B").replace("}", "%7D").replace(":", "%3A");
-						url = url.trim().split("\\?")[0] + "?" +  queryUri;
-				  }
-				  
-				  String repositoryDir = getTagValue("ProductDownloadDirectory", eElement);
-				  if(repositoryDir == null) { 
-					  repositoryDir = "";
-				  }
-			      if(!DatabaseUtility.getInstance().checkFileDownloading(url, darURL)) {
-			    	  log.info("Downloading : " + url);
-			    	  DownloadAction dwnloadAction = DownloadAction.getInstance();
-				      dwnloadAction.addDownload(url, darURL, wsId, null, darStatus, repositoryDir, context);
-			      } else {
-			    	  log.warn("Already downloading file: " + url + " for DAR: " + darURL);
-			      }
-			      
-			   }
+			DatabaseUtility.getInstance().updateMonitoringURLName(darURL, wsId, darResponse.getName());
+			ProductAccessList paList = darResponse.getProductAccessList();
+			if(paList == null) {
+				return darStatus;
 			}
-			//DAR FROM ACS
-			log.debug("Root element :" + doc.getDocumentElement().getNodeName());
-//			nList = doc.getElementsByTagName("productAccess");
-//			log.info("-----------------------");
-//			for (int temp = 0; temp < nList.getLength(); temp++) {
-//			   Node nNode = nList.item(temp);
-//			   if (nNode.getNodeType() == Node.ELEMENT_NODE) {
-//	 
-//			      Element eElement = (Element) nNode;
-//			      url = getTagValue("productAccessURL", eElement);
-//			      log.info("Downloading : " + url);
-//			      DownloadAction dwnloadAction = DownloadAction.getInstance();
-//			      dwnloadAction.addDownload(url, darURL, null, false, wsId, null);
-//			   }
-//			}
-		  } catch (org.xml.sax.SAXException ex) {
+			List<ProductAccess> productAccessList = paList.getProductAccess();
+			for(ProductAccess currProdAccess : productAccessList) {
+				url = currProdAccess.getProductAccessURL();
+				if(url.indexOf("?") != -1) {
+					String queryUri = url.trim().split("\\?")[1].replace("{", "%7B").replace("}", "%7D").replace(":", "%3A");
+					url = url.trim().split("\\?")[0] + "?" +  queryUri;
+				}
+				String repositoryDir = currProdAccess.getProductDownloadDirectory();
+				if(repositoryDir == null) { 
+					  repositoryDir = "";
+				}
+				ProductAccessStatusType status = currProdAccess.getProductAccessStatus();
+			    if(status.equals(ProductAccessStatusType.READY) && !DatabaseUtility.getInstance().checkFileDownloading(url, darURL)) {
+		    	  log.info("Downloading : " + url);
+		    	  String finalRep = ConfigUtility.getFileDownloadDirectory(url, repositoryDir).getAbsolutePath();
+		    	  DownloadAction dwnloadAction = DownloadAction.getInstance();
+			      dwnloadAction.addDownload(url, darURL, wsId, darStatus, finalRep, context);
+			    }
+			}
+		  } catch (UnmarshalException ex) {
+			ex.printStackTrace();
 			log.error("DAR CORRUPTED " + ex.getMessage());
 			log.error("CAN'T START AUTOMATIC DOWNLOADS");
 			ex.printStackTrace();
 		  } catch (Exception e) {
 			e.printStackTrace();
 			log.error("Can not perform download of product " + url + " " + e.getMessage());
-		  }
-	  }
-	 
-	  private static String getTagValue(String sTag, Element eElement) {
-		  NodeList nlList = null;
-		  NodeList nlList1 = eElement.getElementsByTagName(sTag);
-		  if(nlList1 != null) {
-			  if(nlList1.item(0) != null) {
-				  nlList = nlList1.item(0).getChildNodes();
-			  	  Node nValue = (Node) nlList.item(0);
-			  	  if(nValue != null) 
-			  		  return nValue.getNodeValue();
-			  	  else {
-			  		return null; 
-			  	  }
-			  } else {
-				  return null;
-			  }
-		  } else {
-			  return null;
-		  }
+		  } 
+		  
+		  return darStatus;
 	  }
 }

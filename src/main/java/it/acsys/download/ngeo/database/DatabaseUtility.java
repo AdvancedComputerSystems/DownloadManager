@@ -4,7 +4,7 @@ import int_.esa.eo.ngeo.downloadmanager.plugin.EDownloadStatus;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.net.URL;
+import java.net.URI;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -39,6 +39,7 @@ public class DatabaseUtility {
 	final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
 	final Lock r = rwl.readLock();
 	final Lock w = rwl.writeLock();
+	private static final String connectionError = "Can not connect to database";
 			
 	private static Logger log = Logger.getLogger(DatabaseUtility.class);
 	
@@ -137,13 +138,14 @@ public class DatabaseUtility {
 	}
 	
 	
-	public boolean getStopped(String WebServiceURL) {
+	public boolean getStopped(String WebServiceURL, String downloadManagerId) {
 		r.lock();   
 		Connection con = getConnection();
 			
 			try {
-				PreparedStatement pst = con.prepareStatement("select stop from WSURL where registrationurl = ?");
+				PreparedStatement pst = con.prepareStatement("select stop from WSURL where registrationurl = ? and dm_id = ?");
 				pst.setString(1,WebServiceURL);
+				pst.setString(2,downloadManagerId);
 				ResultSet rset = pst.executeQuery();
 				while(rset.next()) {
 					return rset.getBoolean("stop");
@@ -258,34 +260,6 @@ public class DatabaseUtility {
 			
 	 }
 	
-	public Timestamp getDMregLastCall(String registrationURL, String dmIdentifier) {
-		r.lock();
-		Connection con = getConnection();
-		Timestamp lastCall = new Timestamp(0);
-		try {
-    		PreparedStatement pst = con.prepareStatement("select LASTCALL from WSURL where REGISTRATIONURL = ? and dm_id = ?");
-    		pst.setString(1, registrationURL);
-    		pst.setString(2, dmIdentifier);
-            ResultSet rs = pst.executeQuery();
-            while(rs.next()){
-                Timestamp lastTimestamp = rs.getTimestamp("LASTCALL");
-                lastCall = new Timestamp(lastTimestamp.getTime());
-            }
-            pst.close();
-            rs.close();
-     } catch (SQLException e) {
-         e.printStackTrace();
-     } finally {
-    	 r.unlock();
- 		try {
-				con.close();
-			} catch(SQLException e) {
-				e.printStackTrace();
-			}
- 	}
-		return lastCall;
-	}
-	
 	public int getWsId(String WebServiceURL, String dmIdentifier) {
 		r.lock();
 		Connection con = getConnection();
@@ -314,9 +288,9 @@ public class DatabaseUtility {
          return wsId;
 	}
 	
-	public Map<String, String> getDARInformation(String filesource) {
+	public List<Map<String, String>> getDARInformation(String filesource) {
 		r.lock();
-		Map<String, String> result = new HashMap<String, String>();
+		List<Map<String, String>> result = new ArrayList<Map<String, String>>();
 		String sql = "SELECT GID, FILENAME, VALUE, PROGRESS, FILESIZE FROM DOWNLOADS INNER JOIN STATUS ON STATUS.ID= DOWNLOADS.STATUS_ID" +
 				 " WHERE FILESOURCE = ? AND NOTIFIED = FALSE";
     	
@@ -326,12 +300,14 @@ public class DatabaseUtility {
 			pst.setString(1, filesource);
 			ResultSet rset = pst.executeQuery();
 			while(rset.next()){
-				result.put("product_identifier", rset.getString("GID"));
-				result.put("product_access_URL", rset.getString("FILENAME").trim());
+				Map<String, String> currmap = new HashMap<String, String>();
+				currmap.put("product_identifier", rset.getString("GID"));
+				currmap.put("product_access_URL", rset.getString("FILENAME").trim());
 				String icdStatus = getIcdStatus(rset.getString("value").trim());
-				result.put("product_download_status", icdStatus);
-				result.put("product_download_progress", String.valueOf(rset.getInt("progress")));
-				result.put("product_download_size", String.valueOf(rset.getInt("filesize")).trim());
+				currmap.put("product_download_status", icdStatus);
+				currmap.put("product_download_progress", String.valueOf(rset.getInt("progress")));
+				currmap.put("product_download_size", String.valueOf(rset.getInt("filesize")).trim());
+				result.add(currmap);
 			}
 			rset.close();
 			pst.close();		
@@ -362,7 +338,7 @@ public class DatabaseUtility {
  		}
 	}
 
-	public int upadteNotificationStatus(String gid) {
+	public int updateNotificationStatus(String gid) {
 	    r.lock();
 	    String sql = "update downloads set NOTIFIED = ? WHERE GID = ?";
 	    Connection con = getConnection();
@@ -381,31 +357,24 @@ public class DatabaseUtility {
 					con.close();
 		    	}  catch(SQLException sqlEx) {
 		    		sqlEx.printStackTrace();
-		    		log.error("Can not connect to database");
+		    		log.error(connectionError);
 		    	}
 	    }
 	    return -1;
     } 
 	
-	
-	public Map<String, String> getIdleDownloads() {
-		r.lock();
-	    String sql = "select realuri, GID from downloads WHERE STATUS_ID = 7 ";
+	public int updateErrorMessage(String gid, String errorMessage) {
+	    r.lock();
+	    String sql = "update downloads set ERROR_MESSAGE = ? WHERE GID = ?";
 	    Connection con = getConnection();
-	    Map<String, String> result = new HashMap<String, String>();
 	    try {
-	    	Statement statement = con .createStatement();
-			ResultSet rset = statement.executeQuery(sql);
-			while(rset.next()){
-				String url = rset.getString("realuri");
-				String gid = rset.getString("GID");
-				result.put(gid, url);
-			}
-			rset.close();
-			  
+	    	  PreparedStatement pst = con.prepareStatement(sql);
+			  pst.setString(1, errorMessage);
+			  pst.setString(2, gid);
+			  return pst.executeUpdate();
 	    } catch(SQLException e) {
 	    	e.printStackTrace();
-	    	log.error("Can not get downloads to resume from db");
+	    	log.error("Can not update error message into database " + gid);
 	    } finally {
 	    	r.unlock();
 			if (con != null)
@@ -413,20 +382,21 @@ public class DatabaseUtility {
 					con.close();
 		    	}  catch(SQLException sqlEx) {
 		    		sqlEx.printStackTrace();
-		    		log.error("Can not connect to database");
+		    		log.error(connectionError);
 		    	}
 	    }
-	    return result;
+	    return -1;
     } 
 	
-	public Map<String, String> getDownloadsToResume() {
+	public Map<String, String> getDownloadsByStatusId(int statusId) {
 		r.lock();
-	    String sql = "select realuri, GID from downloads WHERE STATUS_ID < 3 ";
+	    String sql = "select realuri, GID from downloads WHERE STATUS_ID = ? ";
 	    Connection con = getConnection();
 	    Map<String, String> result = new HashMap<String, String>();
 	    try {
-	    	Statement statement = con .createStatement();
-			ResultSet rset = statement.executeQuery(sql);
+	    	PreparedStatement pst = con.prepareStatement(sql);
+	    	pst.setInt(1, statusId);
+			ResultSet rset = pst.executeQuery();
 			while(rset.next()){
 				String url = rset.getString("realuri");
 				String gid = rset.getString("GID");
@@ -436,7 +406,7 @@ public class DatabaseUtility {
 			  
 	    } catch(SQLException e) {
 	    	e.printStackTrace();
-	    	log.error("Can not get downloads to resume from db");
+	    	log.error("Can not get downloads from db with state " + statusId);
 	    } finally {
 	    	r.unlock();
 			if (con != null)
@@ -444,44 +414,14 @@ public class DatabaseUtility {
 					con.close();
 		    	}  catch(SQLException sqlEx) {
 		    		sqlEx.printStackTrace();
-		    		log.error("Can not connect to database");
+		    		log.error(connectionError);
 		    	}
 	    }
 	    return result;
-    }
+	}
 	
-	public Map<String, String> getPausedToResume() {
-		r.lock();
-	    String sql = "select realuri, GID from downloads WHERE STATUS_ID = 3 ";
-	    Connection con = getConnection();
-	    Map<String, String> result = new HashMap<String, String>();
-	    try {
-	    	Statement statement = con .createStatement();
-			ResultSet rset = statement.executeQuery(sql);
-			while(rset.next()){
-				String url = rset.getString("realuri");
-				String gid = rset.getString("GID");
-				result.put(gid, url);
-			}
-			rset.close();
-			  
-	    } catch(SQLException e) {
-	    	e.printStackTrace();
-	    	log.error("Can not get downloads to resume from db");
-	    } finally {
-	    	r.unlock();
-			if (con != null)
-				try {
-					con.close();
-		    	}  catch(SQLException sqlEx) {
-		    		sqlEx.printStackTrace();
-		    		log.error("Can not connect to database");
-		    	}
-	    }
-	    return result;
-    }
 	
-	public  void progress(Integer progress, Long completedLength, EDownloadStatus status, String message, String gid) {
+	public  void progress(Integer progress, Long completedLength, EDownloadStatus status, String gid) {
 		w.lock();
 		Connection con = getConnection();
 		try {
@@ -532,46 +472,7 @@ public class DatabaseUtility {
      	}
 	}
 	
-	public  int insertNewDownload(String identifier, String uri, String darURL, int wsId, int statusId, String darStatus, String realUri, String productDownloadDirectory) {
-		w.lock();
-		Connection con = getConnection();
-		int maxPriority = 1;
-		try {
-			Statement stat= con.createStatement();
-			ResultSet rset = stat.executeQuery("select max(priority) as maxPriority from downloads");
-			while(rset.next()) {
-				maxPriority = rset.getInt("maxPriority");
-				if(maxPriority == 0) {
-					maxPriority = 1;
-				}
-			}
-			String sql = "Insert into downloads (filename, filesource, ws_id, gid, status_id, priority, dar_status, realuri, product_download_dir) values(?,?,?,?,?,?,?,?,?)";
-			PreparedStatement pst = con.prepareStatement(sql);
-			  pst.setString(1, uri);
-			  pst.setString(2,darURL.trim());
-			  pst.setInt(3,wsId);
-			  pst.setString(4,identifier);
-			  pst.setInt(5,statusId);
-			  pst.setInt(6,maxPriority);
-			  pst.setString(7,darStatus);
-			  pst.setString(8,realUri);
-			  pst.setString(9,productDownloadDirectory);
-			  return pst.executeUpdate();
-		} catch(SQLException e) {
-			e.printStackTrace();
-			log.error(e.getMessage());
-	    } finally {
-	    	w.unlock();
-			if (con != null)
-				try {
-					con.close();
-		    	}  catch(SQLException sqlEx) {
-		    		sqlEx.printStackTrace();
-		    		log.error("Can not connect to database");
-		    	}
-	    }
-		return -1;
-	  }
+	
 	
 	private Integer getStatusId(EDownloadStatus status) {
 		String sql = "SELECT ID FROM STATUS WHERE VALUE = '" + status.toString()+ "'";
@@ -720,7 +621,8 @@ public class DatabaseUtility {
 			while(rs.next()){
 				maxPriority = rs.getInt("maxPriority");
 			}
-	        pst = con.prepareStatement("select realuri, filename,status_id, ageNew, filesize, progress, filesource, gid, network, priority, dar_status from downloads " + whereCond + sortCondition + limit);
+	        pst = con.prepareStatement("select start_time, realuri, filename, name, status_id, ageNew, filesize, progress, filesource, gid, network, priority, dar_status, error_message from downloads left join monitoringurl on downloads.filesource=monitoringurl.url " + whereCond + sortCondition + limit);
+	        
 	        pst.clearParameters();
 	        rs = pst.executeQuery();
 	        
@@ -733,7 +635,11 @@ public class DatabaseUtility {
 	        	val1.put("filesize", formatFileSize(rs.getString("filesize")));
 	        	int percentage = rs.getInt("progress");
 	        	val1.put("progress", percentage);
-	        	val1.put("filesource", rs.getString("filesource") + "- " + rs.getString("dar_status"));
+	        	String darName = rs.getString("name");
+	        	if(darName == null || darName.equals("")) {
+	        		darName =  rs.getString("filesource");
+	        	}
+	        	val1.put("filesource", darName); //+ "- " + rs.getString("dar_status"));
 	        	val1.put("network", rs.getString("network"));
 	        	val1.put("status_id", rs.getInt("status_id"));
 	        	val1.put("ageNew", rs.getTimestamp("ageNew").toString());
@@ -742,6 +648,7 @@ public class DatabaseUtility {
 	        	} else {
 	        		val1.put("selectedRow", "");
 	        	}
+	        	val1.put("error_message", rs.getString("error_message"));
 	        	values.add(val1);
 	        }
 	        rs.close();
@@ -865,7 +772,11 @@ public class DatabaseUtility {
 		JsonElement sortField = payloads.get("sidx");
 		if(!sortField.getAsString().equals("")) {
 			JsonElement sortOrd = payloads.get("sord");
-			sortCond += " order by "+ sortField.getAsString() + " " + sortOrd.getAsString();
+			if(sortField.getAsString().contains("ageNew")) {
+				sortCond += " order by  start_time desc " + ", agenew " + sortOrd.getAsString();
+			} else {
+				sortCond += " order by "+ sortField.getAsString() + " " + sortOrd.getAsString();
+			}
 		}
 		return	sortCond;
 	}
@@ -1063,26 +974,45 @@ public class DatabaseUtility {
 		HashMap<String, String> result = new HashMap<String, String>();
 		Connection con = null;
 		try {
-			String sql = "SELECT FILENAME, GID  FROM DOWNLOADS " +
+			String sql = "SELECT ID, FILENAME, GID  FROM DOWNLOADS " +
 					" WHERE STATUS_ID = 2 order by priority limit " + maximum;
 			con = getConnection();
+			con.setAutoCommit(false);
 	    	Statement statement = con .createStatement();
 			ResultSet rset = statement.executeQuery(sql);
+			PreparedStatement ps = con.prepareStatement("UPDATE DOWNLOADS SET STATUS_ID = 1 WHERE ID = ?");
 			while(rset.next()) {
+				int downloadId = rset.getInt("ID");
 				result.put(rset.getString("GID"),  rset.getString("FILENAME").trim());
+				ps.clearParameters();
+				ps.setInt(1, downloadId);
+				ps.executeUpdate();
 			}
+			
+			con.commit();
+			statement.close();
+			ps.close();
+			rset.close();			
 		} catch(SQLException e) {
 			e.printStackTrace();
 	    	log.error("Can not get uris to download from db");
+	    	if (con != null) {
+				try {
+					con.rollback();
+				} catch (SQLException e1) {
+					e1.printStackTrace();
+				}
+			}
 	    } finally {
 	    	r.unlock();
-			if (con != null)
+	    	if (con != null) {
 				try {
+					con.setAutoCommit(true);
 					con.close();
 		    	}  catch(SQLException sqlEx) {
-		    		sqlEx.printStackTrace();
-		    		log.error("Can not connect to database");
+		    		log.error(connectionError);
 		    	}
+			}
 	    }
 		
 		return result;
@@ -1111,7 +1041,7 @@ public class DatabaseUtility {
 					con.close();
 		    	}  catch(SQLException sqlEx) {
 		    		sqlEx.printStackTrace();
-		    		log.error("Can not connect to database");
+		    		log.error(connectionError);
 		    	}
 	    }
 		
@@ -1173,12 +1103,77 @@ public class DatabaseUtility {
 		Connection con = getConnection();
 		Map<String, Integer> result = new HashMap<String, Integer>();	
 			try {
-				String sql = "select  registrationurl, refreshperiod from WSURL where registered = true and stop = false and active = true and dm_id = ?";
+				String sql = "select  registrationurl, id from WSURL where registered = true and stop = false and active = true and dm_id = ?";
 				PreparedStatement pst = con.prepareStatement(sql);
 				pst.setString(1, dmIdentifier);
 				ResultSet rset = pst.executeQuery();
 				while(rset.next()) {
-					result.put(rset.getString("registrationurl"), rset.getInt("refreshperiod"));
+					result.put(rset.getString("registrationurl"), rset.getInt("id"));
+				}
+	            rset.close();
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        log.error(e.getMessage());
+	    } finally {
+	    	r.unlock();
+			try {
+				con.close();
+			} catch(SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		return result;
+	}
+	
+	
+	public String getWSUrlsStatus(String dmIdentifier) {
+		r.lock();   
+		Connection con = getConnection();
+		String status = "acs_active";
+			try {
+				String sql = "select  registrationurl, stop, unreachable, active, registered from WSURL where dm_id = ?";
+				PreparedStatement pst = con.prepareStatement(sql);
+				pst.setString(1, dmIdentifier);
+				ResultSet rset = pst.executeQuery();
+				
+				while(rset.next()) {
+					System.out.println("stop" + rset.getBoolean("stop"));
+					System.out.println("unreachable" + rset.getBoolean("unreachable"));
+					System.out.println("active" + rset.getBoolean("active"));
+					System.out.println("registered" + rset.getBoolean("registered"));
+					if(rset.getBoolean("stop") || rset.getBoolean("unreachable") || !rset.getBoolean("active") || !rset.getBoolean("registered")) {
+						status = "acs_error";
+						break;
+					}
+				}
+	            rset.close();
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        log.error(e.getMessage());
+	    } finally {
+	    	r.unlock();
+			try {
+				con.close();
+			} catch(SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		return status;
+	}
+	
+	public int getRefreshPeriodByWsId(int wsId) {
+		r.lock();   
+		Connection con = getConnection();
+		int result = 20000;	
+			try {
+				String sql = "select  refreshperiod from WSURL where id = ?";
+				PreparedStatement pst = con.prepareStatement(sql);
+				pst.setInt(1, wsId);
+				ResultSet rset = pst.executeQuery();
+				while(rset.next()) {
+					result =  rset.getInt("refreshperiod");
 				}
 	            rset.close();
 	    } catch (SQLException e) {
@@ -1477,9 +1472,66 @@ public class DatabaseUtility {
 		return time;
 	}
 
+	public  int insertNewDownload(String identifier, String uri, String darURL, int wsId, int statusId, String darStatus, String realUri, String productDownloadDirectory) {
+		w.lock();
+		Connection con = getConnection();
+		int maxPriority = 1;
+		try {
+			
+			
+			//if URL is MANUAL_DOWNLOAD checks if it exists and if not insert it into database
+			PreparedStatement pst = con.prepareStatement("Select * from  monitoringurl where url = 'MANUAL_DOWNLOAD'");
+			ResultSet rset = pst.executeQuery();
+			if(!rset.next()) {
+				pst = con.prepareStatement("insert into monitoringurl (URL, WS_ID,STATUS, start_time, name) values(?, ?, ?, ?, ?)");
+				pst.clearParameters();
+				pst.setString(1, "MANUAL_DOWNLOAD");
+				pst.setInt(2, -1);
+				pst.setString(3, "");
+				pst.setString(4, "MANUAL_DOWNLOAD");
+				pst.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
+				pst.executeUpdate();
+			}
+			
+			Statement stat= con.createStatement();
+			rset = stat.executeQuery("select max(priority) as maxPriority from downloads");
+			while(rset.next()) {
+				maxPriority = rset.getInt("maxPriority");
+				if(maxPriority == 0) {
+					maxPriority = 1;
+				}
+			}
+			String sql = "Insert into downloads (filename, filesource, ws_id, gid, status_id, priority, dar_status, realuri, product_download_dir) values(?,?,?,?,?,?,?,?,?)";
+		    pst.clearParameters();
+			pst = con.prepareStatement(sql);
+			pst.setString(1, uri);
+			pst.setString(2,darURL.trim());
+			pst.setInt(3,wsId);
+			pst.setString(4,identifier);
+			pst.setInt(5,statusId);
+			pst.setInt(6,maxPriority);
+			pst.setString(7,darStatus);
+			pst.setString(8,realUri);
+			pst.setString(9,productDownloadDirectory);
+			return pst.executeUpdate();
+		} catch(SQLException e) {
+			e.printStackTrace();
+			log.error(e.getMessage());
+	    } finally {
+	    	w.unlock();
+			if (con != null)
+				try {
+					con.close();
+		    	}  catch(SQLException sqlEx) {
+		    		sqlEx.printStackTrace();
+		    		log.error(connectionError);
+		    	}
+	    }
+		return -1;
+	  }
+	
 	public void insertNewDownload(String processIdentifier, String uri,
-			String darURL, int wsId, int statusId, String darStatus,
-			Timestamp timestamp, String productDownloadDirectory) {
+			String darURL, int wsId, int statusId, String darStatus, Timestamp timestamp,String productDownloadDirectory) {
 		w.lock();
 		Connection con = getConnection();
 		int maxPriority = 1;
@@ -1514,7 +1566,7 @@ public class DatabaseUtility {
 					con.close();
 		    	}  catch(SQLException sqlEx) {
 		    		sqlEx.printStackTrace();
-		    		log.error("Can not connect to database");
+		    		log.error(connectionError);
 		    	}
 	    }		
 	}
@@ -1651,7 +1703,7 @@ public class DatabaseUtility {
 					con.close();
 		    	}  catch(SQLException sqlEx) {
 		    		sqlEx.printStackTrace();
-		    		log.error("Can not connect to database");
+		    		log.error(connectionError);
 		    	}
 	    }
 	    return realUri;
@@ -1680,13 +1732,13 @@ public class DatabaseUtility {
 					con.close();
 		    	}  catch(SQLException sqlEx) {
 		    		sqlEx.printStackTrace();
-		    		log.error("Can not connect to database");
+		    		log.error(connectionError);
 		    	}
 	    }
 	    return filename;
 	}
 
-	public void updateDownloadStatisctics(String id, String name) {
+	public void updateDownloadStatisctics(String id, String name, boolean handlePause) {
 		w.lock();
 		   Connection con = getConnection();
 			
@@ -1700,17 +1752,19 @@ public class DatabaseUtility {
 				}
 				if(lastStart != null) {
 					long increment = System.currentTimeMillis() - lastStart.getTime();
-					pst = con.prepareStatement("update downloads set last_start = ?, spent_time = spent_time + ?, plugin_name = ? where gid=?");
+					pst = con.prepareStatement("update downloads set last_start = ?, spent_time = spent_time + ?, plugin_name = ?, handle_pause=? where gid=?");
 					pst.setTimestamp(1, new Timestamp(System.currentTimeMillis()));
 					pst.setLong(2, increment);
 					pst.setString(3, name);
-					pst.setString(4, id);
+					pst.setBoolean(4, handlePause);
+					pst.setString(5, id);
 					pst.executeUpdate();
 				} else {
-					pst = con.prepareStatement("update downloads set last_start = ?, spent_time = 0, plugin_name = ? where gid=?");
+					pst = con.prepareStatement("update downloads set last_start = ?, spent_time = 0, plugin_name = ?, handle_pause=?  where gid=?");
 					pst.setTimestamp(1, new Timestamp(System.currentTimeMillis()));
 					pst.setString(2, name);
-					pst.setString(3, id);
+					pst.setBoolean(3, handlePause);
+					pst.setString(4, id);
 					pst.executeUpdate();
 				}
 	            pst.close();	           
@@ -1726,6 +1780,35 @@ public class DatabaseUtility {
 			}
 		}
 		
+		
+	}
+	
+	public boolean handlePause(String gid) {
+		w.lock();
+		   Connection con = getConnection();
+			boolean handle_pause = false;
+			try {
+				PreparedStatement pst = con.prepareStatement("select handle_pause from downloads WHERE gid = ? ");
+		    	pst.setString(1, gid);
+				ResultSet rset = pst.executeQuery();
+				while(rset.next()) {
+					handle_pause = rset.getBoolean("handle_pause");
+				}
+	            pst.close();
+	            rset.close();
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        log.error(e.getMessage());
+	    } finally {
+	    	w.unlock();
+			try {
+				con.close();
+			} catch(SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		return handle_pause;
 		
 	}
 
@@ -1797,7 +1880,6 @@ public class DatabaseUtility {
 	public void updatePluginStatistics(String processIdentifier) {
 		w.lock();
 	   Connection con = getConnection();
-		
 		try {
 			PreparedStatement pst = con.prepareStatement("select plugin_name, spent_time, filesize from downloads where gid=?");
 			pst.setString(1, processIdentifier);
@@ -1818,7 +1900,6 @@ public class DatabaseUtility {
 				pst = con.prepareStatement("update plugin_statistics set  speed = speed + ?, downloads_number = downloads_number + 1 where plugin_name=?");
 				pst.setInt(1, speed);
 				pst.setString(2, pluginName);
-				
 			} else {
 				pst = con.prepareStatement("insert into plugin_statistics (plugin_name, speed, downloads_number) values (?,?, 1)");
 				pst.setString(1, pluginName);
@@ -1851,8 +1932,8 @@ public class DatabaseUtility {
 			String hostname = "";
 			int speed = 0;
 			while(rset.next()) {
-				URL url = new URL(rset.getString("realuri"));
-				hostname = url.getHost();
+				URI uri = new URI(rset.getString("realuri").trim().replace("{", "%7B").replace("}", "%7D").replace(":", "%3A"));
+				hostname = uri.getHost();
 				BigDecimal fileSize = rset.getBigDecimal("filesize");
 				if(rset.getInt("spent_time") != 0) {
 					speed = (int) (fileSize.floatValue()/rset.getInt("spent_time"))*1000;
@@ -2124,9 +2205,168 @@ public class DatabaseUtility {
 					con.close();
 		    	}  catch(SQLException sqlEx) {
 		    		sqlEx.printStackTrace();
-		    		log.error("Can not connect to database");
+		    		log.error(connectionError);
 		    	}
 	    }
 	    return filesize;
+	}
+
+	public boolean isMonitoringURLRunning(String currMonitoringURL, int wsId) {
+		boolean monitoringUrlExists = false;
+		w.lock();
+		Connection con = getConnection();
+		try {
+			//CHECK IF MONITORING URL ALREADY EXISTS
+			PreparedStatement pst = con.prepareStatement("select id from  MONITORINGURL where URL = ? and  WS_ID = ?");
+			pst.setString(1, currMonitoringURL);
+			pst.setInt(2, wsId);
+			ResultSet rset = pst.executeQuery();
+			while(rset.next()) {
+				monitoringUrlExists = true;
+			}
+			rset.close();
+			pst.close();
+		} catch (SQLException e) {
+	         e.printStackTrace();
+	         log.error(e.getMessage());
+	     } finally {
+	    	 w.unlock();
+	    	try {
+	    		if(con != null)
+	   				con.close();
+			} catch(SQLException e) {
+				e.printStackTrace();
+			}
+     	}
+		
+		return monitoringUrlExists;
+	}
+	public void insertMonitoringURL(String currMonitoringURL, int wsId) {
+		w.lock();
+		Connection con = getConnection();
+		try {
+			PreparedStatement pst = con.prepareStatement("insert into MONITORINGURL (URL, WS_ID,STATUS, start_time) values(?, ?, ?, ?)");
+			pst.clearParameters();
+			pst.setString(1, currMonitoringURL);
+			pst.setInt(2, wsId);
+			pst.setString(3, "IN_PROGRESS");
+			pst.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
+			pst.executeUpdate();
+			pst.close();
+		} catch (SQLException e) {
+	         e.printStackTrace();
+	         log.error(e.getMessage());
+	     } finally {
+	    	 w.unlock();
+	    	try {
+	    		if(con != null)
+	   				con.close();
+			} catch(SQLException e) {
+				e.printStackTrace();
+			}
+     	}
+		
+	}
+	
+	public void updateMonitoringURLStatus(String currMonitoringURL, int wsId, String status) {
+		w.lock();
+		Connection con = getConnection();
+		try {
+			PreparedStatement pst = con.prepareStatement("update MONITORINGURL set STATUS = ? where URL = ? and WS_ID = ?");
+			pst.setString(1, status);
+			pst.setString(2, currMonitoringURL);
+			pst.setInt(3, wsId);
+			pst.executeUpdate();
+			pst.close();
+		} catch (SQLException e) {
+	         e.printStackTrace();
+	         log.error(e.getMessage());
+	     } finally {
+	    	 w.unlock();
+	    	try {
+	    		if(con != null)
+	   				con.close();
+			} catch(SQLException e) {
+				e.printStackTrace();
+			}
+     	}
+		
+	}
+	
+	public void updateMonitoringURLName(String currMonitoringURL, int wsId, String name) {
+		w.lock();
+		Connection con = getConnection();
+		try {
+			PreparedStatement pst = con.prepareStatement("update MONITORINGURL set NAME = ? where URL = ? and WS_ID = ?");
+			pst.setString(1, name);
+			pst.setString(2, currMonitoringURL);
+			pst.setInt(3, wsId);
+			pst.executeUpdate();
+			pst.close();
+		} catch (SQLException e) {
+	         e.printStackTrace();
+	         log.error(e.getMessage());
+	     } finally {
+	    	 w.unlock();
+	    	try {
+	    		if(con != null)
+	   				con.close();
+			} catch(SQLException e) {
+				e.printStackTrace();
+			}
+     	}
+		
+	}
+
+	public Map<String, Integer> getMonitoringUrlToResume() {
+		r.lock();
+	    String sql = "select url, ws_id from monitoringurl WHERE STATUS = \'IN_PROGRESS\'";
+	    Connection con = getConnection();
+	    Map<String, Integer> result = new HashMap<String, Integer>();
+	    try {
+	    	Statement statement = con .createStatement();
+			ResultSet rset = statement.executeQuery(sql);
+			while(rset.next()){
+				String url = rset.getString("url");
+				int wsId = rset.getInt("ws_id");
+				result.put(url, wsId);
+			}
+			rset.close();
+			  
+	    } catch(SQLException e) {
+	    	e.printStackTrace();
+	    	log.error("Can not get monitoring url to resume from db");
+	    } finally {
+	    	r.unlock();
+			if (con != null)
+				try {
+					con.close();
+		    	}  catch(SQLException sqlEx) {
+		    		sqlEx.printStackTrace();
+		    		log.error(connectionError);
+		    	}
+	    }
+	    return result;
+	}
+
+	public void resetMonitoringUrls() {
+		w.lock();
+		   Connection con = getConnection();
+			try {
+				PreparedStatement pst = con.prepareStatement("delete from monitoringurl");
+				pst.executeUpdate();
+	            pst.close();	           
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        log.error(e.getMessage());
+	    } finally {
+	    	w.unlock();
+			try {
+				con.close();
+			} catch(SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		
 	}
 }

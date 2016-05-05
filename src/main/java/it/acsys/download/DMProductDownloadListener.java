@@ -17,8 +17,10 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Properties;
+import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.log4j.Logger;
@@ -27,14 +29,23 @@ import com.siemens.pse.umsso.client.UmssoCLCore;
 import com.siemens.pse.umsso.client.UmssoCLCoreImpl;
 import com.siemens.pse.umsso.client.UmssoCLInput;
 import com.siemens.pse.umsso.client.UmssoHttpPost;
+import com.siemens.pse.umsso.client.util.UmssoHttpResponse;
 
 public class DMProductDownloadListener implements IProductDownloadListener {
 	
 	private static Logger log = Logger.getLogger(DMProductDownloadListener.class);
 	private static Properties configProperties = null;
+	private static Properties excProperties = null;
 	
 	private static HashMap<String, IDownloadProcess> cache = null;
 	private String processIdentifier;
+	
+	private static Properties usersConfigProperties = null;
+	private static String usersConfigPath = ConfigUtility.loadConfig().getProperty("usersConfigPath");
+	private static String exceptionProp = "./config/ExceptionMapping.properties";
+	
+	private static String pwd;
+	private static String user;
 	
 	static {
         try {
@@ -44,6 +55,19 @@ public class DMProductDownloadListener implements IProductDownloadListener {
         	configProperties = new Properties();
         	configProperties.load(stream);
         	stream.close();
+        	File excepFile = new File(exceptionProp);
+        	InputStream excepStream  = new FileInputStream(excepFile);
+        	excProperties = new Properties();
+        	excProperties.load(excepStream);
+        	excepStream.close();
+        	usersConfigProperties = new Properties();
+        	File usersConfigFile = new File(usersConfigPath);
+        	InputStream usersStream  = new FileInputStream(usersConfigFile);
+        	usersConfigProperties.load(usersStream);
+        	usersStream.close();
+        	user = usersConfigProperties.getProperty("umssouser");
+        	AESCryptUtility aesCryptUtility = new AESCryptUtility();
+        	pwd = aesCryptUtility.decryptString((String) usersConfigProperties.getProperty("umssopwd"));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -65,54 +89,100 @@ public class DMProductDownloadListener implements IProductDownloadListener {
 			}
 		}
 		if(status.equals(EDownloadStatus.IN_ERROR)) {
+			System.out.println("ERROR");
+			System.out.println(excProperties.keySet().size());
 			log.error("message " + message);
+			Set<Object> keys = excProperties.keySet();
+			for(Object key: keys) {
+				System.out.println("key " + key);
+				if(message.contains((String) key)) {
+					message = excProperties.getProperty((String) key);
+				}
+			}
+			message = message.substring(0, Math.min(message.length(), 250));
+			
+			DatabaseUtility.getInstance().updateErrorMessage(processIdentifier, message);
 			if(message.contains(configProperties.getProperty("error_message"))) {
 				log.fatal(message);
 			}
 		}
 		
 		if(status.equals(EDownloadStatus.COMPLETED)) {
+			System.out.println("COMPLETED " + processIdentifier); 
 			progress = 100;
 		}
-		DatabaseUtility.getInstance().progress(progress, completedLength, status, message, processIdentifier);
+		DatabaseUtility.getInstance().progress(progress, completedLength, status, processIdentifier);
 		
 		try {
 			if(status.equals(EDownloadStatus.COMPLETED) || status.equals(EDownloadStatus.IN_ERROR) 
-					|| status.equals(EDownloadStatus.CANCELLED)) {			
+					|| status.equals(EDownloadStatus.CANCELLED)) {
 						boolean isTemporaryDir = Boolean.valueOf((String) configProperties.get("isTemporaryDir"));
+						System.out.println("isTemporaryDir " + isTemporaryDir);
 						IDownloadProcess process = (IDownloadProcess) cache.get(processIdentifier);
-						if(isTemporaryDir && process != null) {
+						if(process != null) {
 							File[] files = process.getDownloadedFiles();
-			//						POST PROCESS
+							System.out.println("files[0] " + files[0].getAbsolutePath());
 							if(files != null) {
-								for(int n=0; n<files.length; n++) {
-									File oldFile =  new File(files[n].getAbsolutePath());
-									if(status.equals(EDownloadStatus.CANCELLED)) {
-										oldFile.delete();
-									} else {
+								if(status.equals(EDownloadStatus.CANCELLED)) {
+									for(int n=0; n<files.length; n++) {
+										File oldFile =  new File(files[n].getAbsolutePath());
+										File ariaFile = new File(oldFile.getAbsolutePath() + ".aria2");
+										FileUtility.delete(oldFile);
+										FileUtility.delete(ariaFile);
+									}
+								} else if(isTemporaryDir) {
+									for(int n=0; n<files.length; n++) {
+										String scriptCommand = (String) configProperties.getProperty("script_command");
+										File oldFile =  new File(files[n].getAbsolutePath());
 										String[] parts = files[n].getAbsolutePath().split("TEMPORARY/");
 										File newFile = null;
-										if(parts[1].indexOf(File.separator) != -1) {
-											newFile = new File(parts[0] + parts[1].substring(0, parts[1].indexOf(File.separator)));
-											File oldDir = new File(parts[0] + "TEMPORARY/" + parts[1].substring(0, parts[1].indexOf(File.separator)));
-											if(oldDir.exists()) {
-												FileUtils.copyDirectory(oldDir, newFile);
-												FileUtils.deleteDirectory(oldDir);
+										if(oldFile.exists()) {
+											if(oldFile.isDirectory()) {
+												System.out.println("IS DIR " + oldFile.getAbsolutePath());
+												newFile = new File(parts[0] + parts[1]);
+												FileUtils.copyDirectory(oldFile, newFile);
+												System.out.println("Copying to " + newFile.getAbsolutePath());
+												FileUtils.deleteDirectory(oldFile);
+												//INVOKE SHELL SCRIPT IF CONFIGURED
+												if(scriptCommand != null && !scriptCommand.equals("")) {
+													executeScript(newFile.getAbsolutePath());
+												}
+												
+											} else {
+												System.out.println("IS FILE " + oldFile.getAbsolutePath());
+												newFile = new File(parts[0]);
+												if(parts[1].indexOf(File.separator)!=-1) {
+													newFile = new File(parts[0] + parts[1].substring(0, parts[1].indexOf(File.separator)));
+													File oldDir = new File(parts[0] + "TEMPORARY/" + parts[1].substring(0, parts[1].indexOf(File.separator)));
+													System.out.println("oldDir" + oldDir.getAbsolutePath());
+													if(oldDir.exists()) {
+														FileUtils.copyDirectory(oldDir, newFile);
+														FileUtils.deleteDirectory(oldDir);
+													}
+												} else {
+													FileUtils.copyFileToDirectory(oldFile, newFile);
+													System.out.println("Copying to " + newFile.getAbsolutePath());
+													FileUtils.deleteQuietly(oldFile);
+												}
+												//INVOKE SHELL SCRIPT IF CONFIGURED
+												if(scriptCommand != null && !scriptCommand.equals("")) {
+													executeScript(newFile.getAbsolutePath());
+												}
 											}
-										} else {
-											newFile = new File(parts[0]);
-											if(oldFile.exists()) {
-												FileUtils.copyFileToDirectory(oldFile, newFile);
-												FileUtils.deleteQuietly(oldFile);
-											}
+										}
+									}
+								} else {
+									for(int n=0; n<files.length; n++) {
+										String scriptCommand = (String) configProperties.getProperty("script_command");
+										if(scriptCommand != null && !scriptCommand.equals("")) {
+											executeScript(files[n].getAbsolutePath());
 										}
 									}
 								}
 								
 							}
-							
-							
 						}
+						
 //						IF FILESOURCE != REALURI DELETE TEMPORARY METALINK FILE
 						String filesource = DatabaseUtility.getInstance().getFileNameById(processIdentifier);
 						if(!DatabaseUtility.getInstance().getRealUriById(processIdentifier).equals(filesource)) {
@@ -143,6 +213,39 @@ public class DMProductDownloadListener implements IProductDownloadListener {
 		} 
 	}
 	
+	private void executeScript(String filepath) {
+		String scriptCommand = (String) configProperties.getProperty("script_command");
+		String[] args = scriptCommand.split("\\s+");
+		StringBuffer message = new StringBuffer();
+		for(int n=0; n<args.length; n++) {
+			args[n] = StringEscapeUtils.unescapeXml(args[n].trim());
+			if(args[n].contains("<Product_Path>")) {
+				args[n] = args[n].replace("<Product_Path>", filepath);
+			}
+			
+			message.append(StringEscapeUtils.unescapeXml(args[n]) + " ");
+		}
+		log.info("Executing " + message);
+		ProcessBuilder pb = new ProcessBuilder(args);
+		pb.redirectErrorStream(true);
+		Process p = null;
+		try {
+			p = pb.start();
+			BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+			String line;
+			do {
+			    line = reader.readLine();
+			    if (line != null) { log.debug(line); }
+			} while (line != null);
+			reader.close();
+
+			p.waitFor();
+		} catch (Exception e) {
+			e.printStackTrace();
+			log.error("Can not execute script " + args[0] + " " + e.getMessage());
+		}
+		
+	}
 	
 	@Override
 	public void productDetails(String filename, Integer numFiles, Long totalLength) {
@@ -198,7 +301,8 @@ public class DMProductDownloadListener implements IProductDownloadListener {
 	    	String productDownloadNotification = "";
 	    
     		productDownloadNotification = this.getProductDownloadNotification();
-	    	productDownloadNotification = productDownloadNotification.replace("{product_access_URL}", DatabaseUtility.getInstance().getFileNameById(processIdentifier));
+	    	productDownloadNotification = productDownloadNotification.replace("{product_access_URL}", 
+	    			StringEscapeUtils.escapeXml(DatabaseUtility.getInstance().getFileNameById(processIdentifier)));
 			productDownloadNotification = productDownloadNotification.replace("{product_download_status}", status);
 			productDownloadNotification = productDownloadNotification.replace("{product_download_progress}", String.valueOf(progress));
 			productDownloadNotification = productDownloadNotification.replace("{product_download_message}","");
@@ -219,7 +323,6 @@ public class DMProductDownloadListener implements IProductDownloadListener {
 		UmssoCLInput input = new UmssoCLInput();
 		UmssoCLCore clCore = UmssoCLCoreImpl.getInstance();
 		
-		
 		UmssoHttpPost darMethod = new UmssoHttpPost(darUrl);
 	    try {
 	    		
@@ -230,13 +333,21 @@ public class DMProductDownloadListener implements IProductDownloadListener {
 	      StringEntity entity = new StringEntity(DARRequest, ContentType.TEXT_XML);
 	      darMethod.setEntity(entity);
     	  darMethod.addHeader("Content-Type", "application/xml");
+    	  CommandLineCallback clc = new CommandLineCallback(user, pwd.toCharArray(), null);
+    	  input.setVisualizerCallback(clc);
     	  input.setAppHttpMethod(darMethod);
 		  clCore.processHttpRequest(input);
+		  UmssoHttpResponse response = darMethod.getHttpResponseStore().getHttpResponse();
+		  byte[] responseBody = response.getBody();
+		  log.debug("*************Response for complete notification to " + darUrl + "*************");
+    	  log.debug(new String(responseBody));
+	      log.debug("*************END OF response for complete notification to " + darUrl + "*************");
 		  
 	    }  catch(Exception e) {
 	        log.error("Can not get DARs");
 	    } finally {
 	    	darMethod.releaseConnection();
+//	    	clCore.getUmssoHttpClient().getCookieStore().clear();
 	    } 
     }
 }

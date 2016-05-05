@@ -28,11 +28,7 @@
         	String jspPath = session.getServletContext().getRealPath("/");
         	BufferedReader reader = null;
         	if(usersProperties.get("CLIUsername").equals("") || (session.getAttribute("username") != null &&  session.getAttribute("password") != null)) {
-        		if(configProperties.get("test") != null && configProperties.get("test").equals("true")) {
-        			reader = new BufferedReader(new FileReader(jspPath + "/DownloadManager_javascript/index_test.html"));
-        		} else {
-        			reader = new BufferedReader(new FileReader(jspPath + "/DownloadManager_javascript/index.html"));
-        		}
+        		reader = new BufferedReader(new FileReader(jspPath + "/DownloadManager_javascript/index.html"));
         	} else {
         		reader = new BufferedReader(new FileReader(jspPath + "/DownloadManager_javascript/login.html"));
         	}
@@ -45,10 +41,20 @@
             }
             String errorMessage = (String) session.getAttribute("ERROR_MESSAGE");
             String fileContent = sb.toString();
+            System.out.println("fileContent  " + fileContent);
             if(errorMessage != null) {
             	fileContent = fileContent.replace("__ERROR_MESSAGE__", errorMessage);
             } else {
             	fileContent = fileContent.replace("__ERROR_MESSAGE__", "");
             }
+            
+            
+            if(request.getParameter("showConfig") == null) {
+            	fileContent = fileContent.replace("__ON_LOAD__", "");
+            } else {
+            	fileContent = fileContent.replace("__ON_LOAD__", "$('#__btnEditConf__').click();");
+            }
+            
+            
             out.println(fileContent.replace("{DM_ID}", (String) getServletContext().getAttribute("DM_ID")));
         %>

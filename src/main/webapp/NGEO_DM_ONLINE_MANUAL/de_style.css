@@ -63,18 +63,10 @@ font-weight:normal;
 img.de_780D01ADE8
 {
 margin-top: 0px; margin-right: 0px; margin-bottom: 0px; margin-left: 0px;}
-span.de_262E697FCD
+span.de_2B94C39861
 {
-	font-family: "Arial";
-	font-size: 9pt;
-	color:#0012ff;
-	font-style:italic;
-}
-span.de_2641A9D524
-{
-	font-family: "Verdana";
-	font-size: 12pt;
-	color:#000000;
+	color:#0000ff;
+	text-decoration:underline;
 }
 span.de_32A6305F03
 {
@@ -88,42 +80,16 @@ span.de_41FACAAE6A
 	font-size: 16pt;
 	color:#000000;
 }
-span.de_4A06449470
-{
-	font-family: "Courier New";
-	font-size: 11pt;
-	color:#000000;
-}
 span.de_4AF4BF9DD6
 {
 	font-family: "Arial";
 	font-size: 11pt;
 	color:#000000;
 }
-span.de_4CD179DA38
+span.de_5676F87745
 {
-	font-family: "Calibri";
-	font-size: 11pt;
-	color:#000000;
-}
-span.de_60127372A9
-{
-	font-family: "Arial";
-	font-size: 9pt;
-	color:#0012ff;
-}
-span.de_6257F1EBBB
-{
-	font-family: "Verdana";
-	font-size: 11pt;
-	color:#000000;
-}
-span.de_62B46A2CC1
-{
-	font-family: "Verdana";
-	font-size: 9pt;
-	color:#000000;
-	font-style:italic;
+	color:#1388ec;
+	text-decoration:underline;
 }
 span.de_771986096C
 {
@@ -131,51 +97,11 @@ span.de_771986096C
 	font-size: 26pt;
 	color:#17365d;
 }
-span.de_AC5B080335
-{
-	font-family: "Arial";
-	font-size: 11pt;
-	color:#ffffff;
-	font-style:italic;
-}
 span.de_C3917CD988
 {
 	font-family: "Verdana";
 	font-size: 9pt;
 	color:#000000;
-}
-span.de_C938F7E3CD
-{
-	font-family: "Arial";
-	font-size: 11pt;
-	color:#548dd4;
-	font-style:italic;
-}
-span.de_D305498EDE
-{
-	font-family: "Symbol";
-	font-size: 11pt;
-	color:#000000;
-}
-span.de_D594AE5529
-{
-	font-family: "Verdana";
-	font-size: 9pt;
-	color:#ffffff;
-}
-span.de_E0D79DE1AC
-{
-	font-family: "Arial";
-	font-size: 11pt;
-	color:#000000;
-	font-style:italic;
-}
-span.de_F6703A6C12
-{
-	font-family: "Arial";
-	font-size: 11pt;
-	color:#0070c0;
-	font-style:italic;
 }
 span.de_FE04B87F3C
 {
@@ -251,102 +177,6 @@ span.de_FE04B87F3C
 	counter-increment: list-counter-2;
 }
 .list-counter-2 > div > div[class='list-marker-chm'] {
-	display: inline-block;
-	text-align: right;
-	width: 11pt;
-	zoom: 1;
-	padding: 0;
-	margin: 0;
-	*display: inline;
-}
-.list-counter-3 {
-	position: relative;	left: 14pt;}
-.list-counter-3 > div {
-	text-indent: -14pt;}
-.list-counter-3 > div > * {
-	text-indent: 0pt;}
-.list-counter-3 > div > div[class='list-marker']:before {
-	display: inline-block;
-	text-align: right;
-	padding: 0;
-	margin: 0;
-	width: 11pt;
-	content: '' counter(list-counter-3, disc) '\00a0';
-	counter-increment: list-counter-3;
-}
-.list-counter-3 > div > div[class='list-marker-chm'] {
-	display: inline-block;
-	text-align: right;
-	width: 11pt;
-	zoom: 1;
-	padding: 0;
-	margin: 0;
-	*display: inline;
-}
-.list-counter-4 {
-	position: relative;	left: 12pt;}
-.list-counter-4 > div {
-	text-indent: -12pt;}
-.list-counter-4 > div > * {
-	text-indent: 0pt;}
-.list-counter-4 > div > div[class='list-marker']:before {
-	display: inline-block;
-	text-align: right;
-	padding: 0;
-	margin: 0;
-	width: 9pt;
-	content: '' counter(list-counter-4, disc) '\00a0';
-	counter-increment: list-counter-4;
-}
-.list-counter-4 > div > div[class='list-marker-chm'] {
-	display: inline-block;
-	text-align: right;
-	width: 9pt;
-	zoom: 1;
-	padding: 0;
-	margin: 0;
-	*display: inline;
-}
-.list-counter-5 {
-	position: relative;	left: 14pt;}
-.list-counter-5 > div {
-	text-indent: -14pt;}
-.list-counter-5 > div > * {
-	text-indent: 0pt;}
-.list-counter-5 > div > div[class='list-marker']:before {
-	display: inline-block;
-	text-align: right;
-	padding: 0;
-	margin: 0;
-	width: 11pt;
-	content: '' counter(list-counter-5, disc) '\00a0';
-	counter-increment: list-counter-5;
-}
-.list-counter-5 > div > div[class='list-marker-chm'] {
-	display: inline-block;
-	text-align: right;
-	width: 11pt;
-	zoom: 1;
-	padding: 0;
-	margin: 0;
-	*display: inline;
-}
-.list-counter-6 {
-	position: relative;	left: 14pt;}
-.list-counter-6 > div {
-	text-indent: -14pt;}
-.list-counter-6 > div > * {
-	text-indent: 0pt;}
-.list-counter-6 > div > div[class='list-marker']:before {
-	display: inline-block;
-	text-align: right;
-	padding: 0;
-	margin: 0;
-	width: 11pt;
-	content: '' counter(list-counter-6, disc) '\00a0';
-	counter-increment: list-counter-6;
-}
-.list-counter-6 > div > div[class='list-marker-chm'] {
 	display: inline-block;
 	text-align: right;
 	width: 11pt;

@@ -1336,10 +1336,10 @@ InputSync.prototype ={
 DR_EXPLAIN.namespace( 'DR_EXPLAIN.data_menu' );
 DR_EXPLAIN.data_menu = {
 	// menu
-	DREX_NODE_NAMES: ["TITLE","TITLE","DOCUMENT STATUS SHEET","INTRODUCTION","APPLICABLE AND REFERENCE DOCUMENTS","TERMS, DEFINITIONS AND ABBREVIATED TERMS","DESCRIPTION OF THE USER MANUAL","PRODUCT DESCRIPTION","	DOWNLOAD MANAGER CLI","DOWNLOAD MANAGER GRAPHIC USER INTERFACE (GUI)","PURPOSE","SCOPE","APPLICABLE DOCUMENTS","REFERENCE DOCUMENTS","DEFINITIONS","ACRONYMS AND DEFINITIONS","HOW TO USE THIS MANUAL","TYPICAL READERS CHARACTERISTICS","INTRODUCTION","HOW TO INSTALL THE DOWNLOAD MANAGER","FUNCTIONAL DESCRIPTION","LAUNCH THE CLI (ALL O.S.)","MAIN COMMANDS","INTRODUCTION","CONVENTION USED","SOFTWARE/HARDWARE PREREQUISITES","INSTALLATION","UNINSTALLATION  (ALL O.S.)","EXAMPLE SCENARIO 1: LAUNCHING THE DOWNLOAD MANAGER LOCALLY","EXAMPLE SCENARIO 2: MANAGING DOWNLOADS OF DARS","CLI COMMANDS","USAGE OF DOWNLOAD MANAGER WITH GUI","COMMANDS","FILES TABLE","DOWNLOAD MANAGER TOOLS","LINUX PLATFORM","WINDOWS PLATFORM","OSX PLATFORM","PRECAUTIONS AND WARNING MESSAGES","EXAMPLES AND PROCEDURES","POTENTIAL ERRORS, THEIR CAUSES AND SOLUTIONS","PRECAUTIONS AND WARNING MESSAGES","EXAMPLES AND PROCEDURES","POTENTIAL ERRORS, THEIR CAUSES AND SOLUTIONS","EDIT CONFIGURATION","STATISTICS"],
-	DREX_NODE_LINKS: ["index.htm","title.htm","document_status_sheet.htm","introduction_1.htm","applicable_and_reference_documents.htm","terms__definitions_and_abbreviated_terms.htm","description_of_the_user_manual.htm","product_description.htm","_download_manager_cli.htm","download_manager_graphic_user_interface__gui_.htm","purpose.htm","scope.htm","applicable_documents.htm","reference_documents.htm","definitions.htm","acronyms_and_definitions.htm","how_to_use_this_manual.htm","typical_readers_characteristics.htm","introduction_2.htm","how_to_install_the_download_manager.htm","functional_description.htm","launch_the_cli__all_o_s__.htm","main_commands.htm","introduction_3.htm","convention_used.htm","software_hardware_prerequisites.htm","installation.htm","uninstallation___all_o_s__.htm","example_scenario_1__launching_the_download_manager_locally.htm","example_scenario_2__managing_downloads_of_dars.htm","cli_commands.htm","usage_of_download_manager_with_gui.htm","commands.htm","files_table.htm","download_manager_tools.htm","linux_platform.htm","windows_platform.htm","osx_platform.htm","precautions_and_warning_messages_1.htm","examples_and_procedures_1.htm","potential_errors__their_causes_and_solutions_1.htm","precautions_and_warning_messages_2.htm","examples_and_procedures_2.htm","potential_errors__their_causes_and_solutions_2.htm","edit_configuration.htm","statistics.htm"],
-	DREX_NODE_CHILD_START: [1,10,10,10,12,14,16,18,21,23,24,24,24,24,24,24,24,24,24,24,28,30,30,31,35,35,35,38,38,41,44,44,44,46,46,46,46,46,46,46,46,46,46,46,46,46],
-	DREX_NODE_CHILD_END: [10,10,10,12,14,16,18,21,23,24,24,24,24,24,24,24,24,24,24,28,30,30,31,35,35,35,38,38,41,44,44,44,46,46,46,46,46,46,46,46,46,46,46,46,46,46],
+	DREX_NODE_NAMES: ["","DOWNLOAD MANAGER USER MANUAL","SUMMARY","USAGE OF DOWNLOAD MANAGER WITH GUI","COMMANDS","FILES TABLE","DOWNLOAD MANAGER TOOLS","EDIT CONFIGURATION","STATISTICS"],
+	DREX_NODE_LINKS: ["index.htm","title.htm","introduction_2.htm","usage_of_download_manager_with_gui.htm","commands.htm","files_table.htm","download_manager_tools.htm","edit_configuration.htm","statistics.htm"],
+	DREX_NODE_CHILD_START: [1,3,3,7,7,9,9,9,9],
+	DREX_NODE_CHILD_END: [3,3,7,7,9,9,9,9,9],
 	DREX_MENU_TYPE: 3,
 	DREX_HAS_ROOT_NODE: 0};
 /*js/drexplain/drexplain.data.index.js*/
@@ -1348,9 +1348,9 @@ DR_EXPLAIN.data_menu = {
 DR_EXPLAIN.namespace( 'DR_EXPLAIN.data_search' );
 DR_EXPLAIN.data_search = {
 
-	DREXPLAIN_NOT_FOUND: "Trovato niente",
-	DREXPLAIN_EMPTY_STRING: "Inserire una stringa per la ricerca!",
-	DREXPLAIN_IN_PROGRESS: "Ricerca...",
+	DREXPLAIN_NOT_FOUND: "Not found...",
+	DREXPLAIN_EMPTY_STRING: "Insert string for query...",
+	DREXPLAIN_IN_PROGRESS: "Searching...",
 	DREXPLAIN_PREVIEW_MODE_SEARCH_IS_DISABLED_NOTICE : "In the preview mode the search is disabled.",
 	DREXPLAIN_ERROR_LOCAL_SEARCH : "Google Chrome and Opera 12.02 and above do not support search in local HTML files. Upload your files to web server or use another browser."
 

@@ -35,6 +35,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
@@ -55,7 +57,7 @@ public class DownloadsMonitorServlet extends HttpServlet {
 	private static Logger log = Logger.getLogger(DownloadsMonitorServlet.class);
 	
 	
-	private static String usersConfigPath = "./etc/users.properties";
+	private static String usersConfigPath = ConfigUtility.loadConfig().getProperty("usersConfigPath");
 
 	
     /**
@@ -66,14 +68,7 @@ public class DownloadsMonitorServlet extends HttpServlet {
 	public DownloadsMonitorServlet() {
         super();
     }
-    
-
-	/**
-	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
-	 */
-	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-	}
-	
+    	
 	private ArrayList closePopUp(ArrayList result) throws IOException {
 		if(result == null) {
 			result = new ArrayList();
@@ -111,15 +106,15 @@ public class DownloadsMonitorServlet extends HttpServlet {
 		}
 		HashMap resp = new HashMap();
 		HashMap payload = new HashMap();
+		payload.put("_EXEC_METHOD_NAME_", "triggerRefresh");
 		resp.put("command", "EXEC");
 		resp.put("payloads", payload);
-		resp.put("methodName", "triggerRefresh");
+		//resp.put("methodName", "triggerRefresh");
 		resp.put("targetId", gridId);
 		result.add(resp);
 		
 		return result;
 	}
-	
 	
 	private ArrayList getEditConfInterface(ArrayList result)  {
 		if(result == null)
@@ -153,7 +148,7 @@ public class DownloadsMonitorServlet extends HttpServlet {
 			      e.printStackTrace();
 			}
 			String umssouser = (String) usersProperties.get("umssouser");
-			com.sun.org.apache.xml.internal.security.Init.init();
+//			com.sun.org.apache.xml.internal.security.Init.init();
 			AESCryptUtility aesCryptUtility = new AESCryptUtility();
 			String umssopwd  = aesCryptUtility.decryptString((String) usersProperties.getProperty("umssopwd"));
 			String DMServerURL = (String) properties.get("WebServiceURLs");
@@ -161,8 +156,6 @@ public class DownloadsMonitorServlet extends HttpServlet {
 			String logLevel = (String) properties.get("loglevel");
 			String acceptCertificate = (String) properties.get("acceptCertificate");
 			String downNumb = (String) properties.get("maxDownNumb");
-			String downIdentifier = (String) properties.get("DMIdentifier");
-			String downFriendlyName = (String) properties.get("DMFriendlyName");
 	        
 	        String[] fatalsEceptions = ((String) properties.getProperty("fatalExceptions")).split("\\|\\|");
 			if(Arrays.asList(fatalsEceptions).contains("FileSystemWriteException")) {
@@ -211,13 +204,18 @@ public class DownloadsMonitorServlet extends HttpServlet {
 	        	filecontent = filecontent.replace("{certficate_false}", "selected");
 	        }
 	        filecontent = filecontent.replace("{down_numb_value}", downNumb);
-	        filecontent = filecontent.replace("{down_identifier}", downIdentifier);
-	        filecontent = filecontent.replace("{down_friendly_name}", downFriendlyName);
 	        
 	        filecontent = filecontent.replace("{cli_username_value}", (String) usersProperties.get("CLIUsername"));
 	        filecontent = filecontent.replace("{cli_password_value}", aesCryptUtility.decryptString((String) usersProperties.getProperty("CLIPwd")));
 	        filecontent = filecontent.replace("{confirm_cli_pass_value}", aesCryptUtility.decryptString((String) usersProperties.getProperty("CLIPwd")));
 	        
+	        String scriptCommand = "";
+	        if(properties.get("script_command") != null) {
+	        	scriptCommand =(String) properties.get("script_command");
+	        }
+	        System.out.println("scriptCommand " + scriptCommand);
+	        
+	        filecontent = filecontent.replace("{script_command}", scriptCommand);
 	        
 			payload.put("content", filecontent);
 			payload.put("objectType", "dialog");
@@ -309,6 +307,23 @@ public class DownloadsMonitorServlet extends HttpServlet {
 	    event2.put("args",message);
 	    data.add(event1);
 	    data.add(event2);
+	    
+	    
+	    
+	    
+	    HashMap event3 = new HashMap();
+	    event3.put("objName","wsData");
+	    event3.put("methodName","html");
+	    StringBuffer htmlWsText = new StringBuffer();
+	    Properties configProperties = ConfigUtility.loadConfig();
+	    String wsUrlsStatus = DatabaseUtility.getInstance().getWSUrlsStatus(configProperties.getProperty("DMIdentifier"));
+	    htmlWsText.append("<p class=\"" + wsUrlsStatus + "\"></p>");
+
+	    event3.put("args",htmlWsText);
+	    data.add(event3);
+	    
+	    
+	    
 	    HashMap argv = new HashMap();
 	    argv.put("data", data);
 		payload.put("_ARGV_", argv);
@@ -394,7 +409,7 @@ public class DownloadsMonitorServlet extends HttpServlet {
         if(request.getParameter("acs_sibAction") != null)  {
         	try {
 	        	String acsSibAction =  new String(Base64.decode(request.getParameter("acs_sibAction")));
-	        	//System.out.println("acsSibAction " + acsSibAction);
+//	        	System.out.println("acsSibAction " + acsSibAction);
 	        	ArrayList result = null;
 	        	JsonParser parser = new JsonParser();
 	        	JsonObject obj = (JsonObject) parser.parse(acsSibAction);
@@ -427,7 +442,6 @@ public class DownloadsMonitorServlet extends HttpServlet {
 	        		result = reloadPage();
 	        	}
 	        	
-	        	
 	        	String ssoStatus = (String) getServletContext().getAttribute("SSO_LOGIN_STATUS");
 	        	if(command.getAsString().equalsIgnoreCase("click")) {
 	        		JsonElement targetId = obj.get("targetId");
@@ -440,12 +454,8 @@ public class DownloadsMonitorServlet extends HttpServlet {
 	        			String umssouser = properties.get("username").getAsString();
 	        			String pwd = properties.get("password").getAsString();
 	        			String confirmPwd = properties.get("confirm_pass").getAsString();
-	        			String serversURL = properties.get("servers_url").getAsString();
 	        			String repositoryDir = properties.get("down_path").getAsString();
-	        			String loglevel = properties.get("log_level").getAsString();
-	        			String acceptCertificate = properties.get("accept_certificate").getAsString();
-	        			String maxDownNumb = properties.get("down_numb").getAsString();
-	        			
+	        			String scriptCommand = properties.get("script_command").getAsString();
 	        			
 	        			String fatalExceptions = "";
 	        			JsonElement FileSystemWriteException = properties.get("FileSystemWriteException");
@@ -463,9 +473,6 @@ public class DownloadsMonitorServlet extends HttpServlet {
 	        				fatalExceptions += "ProductUnavailableException||";
 		        		}
 	        			
-	        			
-	        			String downIdentifier = properties.get("down_identifier").getAsString();
-	        			String downFriendlyName = properties.get("down_friendly_name").getAsString();
 	        			String CLIUsername = properties.get("cli_username").getAsString();
 	        			String CLIPwd = properties.get("cli_password").getAsString();
 	        			String confirmCLIPwd = properties.get("confirm_cli_pass").getAsString();
@@ -481,14 +488,9 @@ public class DownloadsMonitorServlet extends HttpServlet {
 	    		        	AESCryptUtility aesCryptUtility = new AESCryptUtility();
 	    		        	usersProperties.put("umssopwd", aesCryptUtility.encryptString(pwd));
 	    		        	Properties configProperties = ConfigUtility.loadConfig();
-	    		        	configProperties.put("WebServiceURLs", serversURL);
 	    		        	configProperties.put("repositoryDir", repositoryDir);
-	    		        	configProperties.put("loglevel", loglevel);
-	    		        	configProperties.put("acceptCertificate", acceptCertificate);
-	    		        	configProperties.put("maxDownNumb", maxDownNumb);
+	    		        	configProperties.put("script_command", StringEscapeUtils.escapeXml(scriptCommand));
 	    		        	configProperties.put("fatalExceptions", fatalExceptions);
-	    		        	configProperties.put("DMIdentifier",downIdentifier);
-	    		        	configProperties.put("DMFriendlyName",downFriendlyName);
 	    		        	usersProperties.put("CLIPwd",aesCryptUtility.encryptString(CLIPwd));
 	    		        	usersProperties.put("CLIUsername",CLIUsername);
 	    		        	
@@ -518,7 +520,7 @@ public class DownloadsMonitorServlet extends HttpServlet {
 	        	} else {
 	        		if(ssoStatus != null && ssoStatus.equals("LOGINFAILED")) {
 //		        		SHOW ERROR POP UP
-		        		result = this.sendMessage(result, "Wrong SSO username/password.\n Please edit the configuraion properties and restart the service.");
+		        		result = this.sendMessage(result, "Wrong SSO username/password.\n Please edit the configuration properties and restart the service.");
 		        	} else {
 		        		if (targetId.getAsString().equalsIgnoreCase("__btnPurgeDB__")) {
 		        			//delete from db
@@ -526,6 +528,7 @@ public class DownloadsMonitorServlet extends HttpServlet {
 		        			result = this.triggerRefrehGrid(result, "ngeo_if_grid");
 		        		} else if (targetId.getAsString().equalsIgnoreCase("__btnPurgeWSURLS__")) {
 		        			//delete wsurls from db
+		        			DatabaseUtility.getInstance().resetMonitoringUrls();
 		        			DatabaseUtility.getInstance().resetWSURLs();
 		        		} else if (targetId.getAsString().equalsIgnoreCase("__btnResetStatistics__")) {
 		        			//delete from db
@@ -542,13 +545,18 @@ public class DownloadsMonitorServlet extends HttpServlet {
 		        			while(iterator.hasNext()) {
 		        				JsonObject currEl = (JsonObject) iterator.next();
 		        				String gid = currEl.get("gid").getAsString();
+		        				System.out.println("gid " + gid);
 		        				int statusId = currEl.get("status_id").getAsInt();
 		        				String filename = currEl.get("filename").getAsString();
 		        				if(statusId ==  1) {
 		        					IDownloadProcess down = (IDownloadProcess) cache.get(gid);
-			        				down.pauseDownload();
-			        				DatabaseUtility.getInstance().updateDownloadStatisctics(gid);		        				
-			        				log.debug("Paused download with id " + gid);
+		        					if(!DatabaseUtility.getInstance().handlePause(gid)) {
+		        						noPause.add(filename);
+		        					} else {
+				        				down.pauseDownload();
+				        				DatabaseUtility.getInstance().updateDownloadStatisctics(gid);		        				
+				        				log.debug("Paused download with id " + gid);
+		        					}
 		        				} else 	{
 		        					noPause.add(filename);
 		        				}
@@ -612,7 +620,6 @@ public class DownloadsMonitorServlet extends HttpServlet {
 		        				int statusId = currEl.get("status_id").getAsInt();
 		        				String filename = currEl.get("filename").getAsString();
 		        				if(statusId ==  1) {
-		        					//IDownloadProcess down = (IDownloadProcess) Class.forName("it.acsys.aria2wrapper.IDownloadProcessImpl").getConstructor(String.class, String.class, it.acsys.download.downloadplugin.IProductDownloadListener.class).newInstance(rpcHost,gid,null);
 		        					IDownloadProcess down = (IDownloadProcess) cache.get(gid);
 			        				down.cancelDownload();
 			        				log.debug("Stopped download with id " + gid);
@@ -669,51 +676,56 @@ public class DownloadsMonitorServlet extends HttpServlet {
 	        				}
 	        				result = this.triggerRefrehGrid(result, "ngeo_if_grid");
 		        		}
+		        		else if (targetId.getAsString().equalsIgnoreCase("__btnRetry__")) {
+		        			JsonObject targetObj = (JsonObject) payloads.get("__btnRetry__");
+		        			JsonObject buttonProperties = (JsonObject) targetObj.get("properties");
+		        			JsonObject grid = (JsonObject) buttonProperties.get("ngeo_if_grid");
+		        			JsonObject properties = (JsonObject) grid.get("properties");
+		        			JsonArray selectedItems = properties.get("selectedItems").getAsJsonArray();
+		        			Iterator<JsonElement> iterator = selectedItems.iterator();
+		        			ArrayList<String> noRetry = new ArrayList<String>();
+		        			while(iterator.hasNext()) {
+		        				JsonObject currEl = (JsonObject) iterator.next();
+		        				String gid = currEl.get("gid").getAsString();
+		        				int statusId = currEl.get("status_id").getAsInt();
+		        				String filename = currEl.get("filename").getAsString();
+		        				if(statusId ==  4) {
+		        					//RETRY
+		        					System.out.println("REMOVING FROM CACHE " + gid);
+		        					cache.remove(gid);
+		        					if(!DatabaseUtility.getInstance().checkFileDownloading(filename)) {
+		        						log.debug("Retrying to download " + filename);
+		        						//reset error message
+		        						DatabaseUtility.getInstance().updateErrorMessage(gid, "");
+				        				DatabaseUtility.getInstance().progress(0, 0l, EDownloadStatus.NOT_STARTED, gid);					        			
+				        			} else {
+				        				result = this.sendMessage(result, "The download " + filename + " is already running.");
+				        			}
+				        			result = this.triggerRefrehGrid(result, "ngeo_if_grid");
+		        				} else 	{
+		        					noRetry.add(filename);
+		        				}
+		        			}
+		        			
+	        				if(!noRetry.isEmpty()) {
+	        					Iterator<String> noRetryIt = noRetry.iterator();
+	        					String message = "";
+	        					while(noRetryIt.hasNext()) {
+	        						message += noRetryIt.next() + "\n";
+	        					}
+	        					result = this.sendMessage(result, "Cannot retry download " + message);
+	        					log.info("Cannot retry download " + message);
+	        				}
+	        				
+	        				result = this.triggerRefrehGrid(result, "ngeo_if_grid");
+		        		}
 		        		else if (targetId.getAsString().equalsIgnoreCase("__btnDownload__")) {
 		        			JsonObject targetObj = (JsonObject) payloads.get("__btnDownload__");
 		        			JsonObject properties = (JsonObject) targetObj.get("properties");
 		        			String DARUri = ((JsonElement) properties.get("down_new_path")).getAsString();
 		        			if(!DatabaseUtility.getInstance().checkDARDownloading(DARUri)) {
-			    				PostMethod darMethod = new PostMethod(DARUri);
-			    		    	HttpClient client = new HttpClient();
-			    			    client.getParams().setParameter("http.useragent", "My Browser");
-			    			    try{
-			    		    	  FileInputStream monitoringFile = new FileInputStream("./templates/DMDARMonitoring.xml");
-			    		    	  DataInputStream in = new DataInputStream(monitoringFile);
-			    		    	  BufferedReader br = new BufferedReader(new InputStreamReader(in));
-			    		    	  StringBuffer sb = new StringBuffer();
-			    		    	  String strLine;
-			    		    	  while((strLine = br.readLine()) != null) {
-			    		    		  sb.append(strLine);
-			    		    	  }
-			    		    	  String filecontent = sb.toString();
-			    		    	  monitoringFile.close();
-			    		    	  in.close();
-			    		    	  br.close();
-			    		    	  Properties configProperties = ConfigUtility.loadConfig();
-			    		    	  filecontent = filecontent.replace("{DM_ID}", configProperties.getProperty("DMIdentifier"));    	  
-			    		    	  darMethod.setRequestBody(filecontent);
-			    		    	  darMethod.setRequestHeader(new Header("Content-Type", "application/xml"));
-			    		    	  client.executeMethod(darMethod);
-			    		    	  byte[] responseBody =  darMethod.getResponseBody();
-			    		    	  FileWriter fstream = new FileWriter(((String) configProperties.getProperty("DARsDir"))+"/DAR"+"_"+System.currentTimeMillis());
-			    			      BufferedWriter outBuff = new BufferedWriter(fstream);
-			    			      outBuff.write(new String(responseBody));
-			    			      outBuff.close();
-			    		    	  DARParser DARParser = new DARParser();
-			    		    	  DARParser.parse( new String(responseBody), DARUri, -1, getServletContext());
-			    		    	  out.print("Started download of DAR " + DARUri);
-			    				  log.debug("Started download of DAR " + DARUri);
-			    			    } catch(Exception e) {
-			    			    	//e.printStackTrace();
-			        				result = this.sendMessage(result, "The download " + DARUri + " gives the following error\n" + e.getMessage());
-			    			        log.error("Can not start download of DAR " + DARUri);
-			    			    } finally {
-			    			    	darMethod.releaseConnection();
-			    			    	//result = DatabaseUtility.getInstance().getNewGridData(result, grid);
-			    			    }
+		        				executeDAR(DARUri, result, out);
 		        			} else {
-		        				//result = DatabaseUtility.getInstance().getNewGridData(result, grid);
 		        				result = this.sendMessage(result, "The Download of DAR " + DARUri + " is already running.");
 		        			}
 		        			result = this.triggerRefrehGrid(result, "ngeo_if_grid");
@@ -721,31 +733,47 @@ public class DownloadsMonitorServlet extends HttpServlet {
 		        			JsonObject targetObj = (JsonObject) payloads.get("__btnProductDownload__");
 		        			JsonObject properties = (JsonObject) targetObj.get("properties");
 		        			String productUri = ((JsonElement) properties.get("down_product_new_path")).getAsString();
-	//	        			Thread thread = new Thread(new DownloadThread(productUri));
-	//	    				thread.start();
-		        			if(!DatabaseUtility.getInstance().checkFileDownloading(productUri)) {
-		        				DownloadAction dwnloadAction = DownloadAction.getInstance();
-		        		        dwnloadAction.addDownload(productUri, "MANUAL_DOWNLOAD", -1, null, "", "", getServletContext());
-			        			
+		        			UrlValidator urlValidator = new UrlValidator(UrlValidator.ALLOW_2_SLASHES + UrlValidator.ALLOW_ALL_SCHEMES + UrlValidator.ALLOW_LOCAL_URLS);
+		        			if(!urlValidator.isValid(productUri)) {
+		        				result = this.sendMessage(result, "Inserted URL " + productUri + " is not valid.");
 		        			} else {
-		        				result = this.sendMessage(result, "The download " + productUri + " is already running.");
+		        				if(!DatabaseUtility.getInstance().checkFileDownloading(productUri)) {
+			        				DownloadAction dwnloadAction = DownloadAction.getInstance();
+			        		        dwnloadAction.addDownload(productUri, "MANUAL_DOWNLOAD", -1, "", ConfigUtility.getFileDownloadDirectory(productUri, "").getAbsolutePath(), getServletContext());
+				        			
+			        			} else {
+			        				result = this.sendMessage(result, "The download " + productUri + " is already running.");
+			        			}
 		        			}
+		        			
 		        			result = this.triggerRefrehGrid(result, "ngeo_if_grid");
 		        		} 
 		        	}
 	        	}	
-	        } else if(ssoStatus != null && ssoStatus.equals("LOGINFAILED")) {
+	        } else if(ssoStatus != null && ssoStatus.equals("LOGINFAILED") && getServletContext().getAttribute("SHOW_POPUP")==null) {
 //        		SHOW ERROR POP UP
-        		result = this.sendMessage(result, "Wrong SSO username/password.\n Please edit the configuraion properties and restart the service.");
+	        	log.error("Wrong SSO username/password.\n Please edit the configuration properties and restart the service.");
+        		result = this.sendMessage(result, "Wrong SSO username/password.\n Please edit the configuration properties and restart the service.");
+        		getServletContext().setAttribute("SHOW_POPUP", false);
         	} else if(command.getAsString().equalsIgnoreCase("TAB_REFRESH")) {
         		this.readLog(response);
         		return;
         	} else if(command.getAsString().equalsIgnoreCase("fxgridevent_refresh")) {
+        		 if(payloads.get("originalEventName").getAsString().equals("load_ngeo_if_grid")) {
+        			//REFRSH REQUEST TO WS
+        			 System.out.println("REFRSH REQUEST TO WS");
+        			RetrieveDARURLsThread retrieveDAR = (RetrieveDARURLsThread) getServletContext().getAttribute("RetrieveDARURLsThread");
+        			retrieveDAR.stopThread();
+        			retrieveDAR = new RetrieveDARURLsThread(getServletContext());
+        			retrieveDAR.start();
+        			getServletContext().setAttribute("RetrieveDARURLsThread", retrieveDAR);
+        		 }
         		JsonObject grid = (JsonObject) payloads.get("ngeo_if_grid");
         		JsonObject properties = (JsonObject) grid.get("properties");
         		Long currTime = System.currentTimeMillis();
         		Long initialTime = (Long) getServletContext().getAttribute("initialTime");
         		result = this.refreshGrid(properties, "ngEO Download Manager uptime: " + (currTime-initialTime)/60000  + " minutes.");
+    		 
         	}
 	     
 	        	
@@ -850,7 +878,7 @@ public class DownloadsMonitorServlet extends HttpServlet {
 					String gid = null;
 					if(!DatabaseUtility.getInstance().checkFileDownloading(url)) {
 	    				DownloadAction dwnloadAction = DownloadAction.getInstance();
-	    				gid = dwnloadAction.addDownload(url, "MANUAL_DOWNLOAD", -1, null, "", "", getServletContext());
+	    				gid = dwnloadAction.addDownload(url, "MANUAL_DOWNLOAD", -1, "", ConfigUtility.getFileDownloadDirectory(url, "").getAbsolutePath(), getServletContext());
 						out.print("Started download " + url + " with id " + gid);
 					} else {
 						out.print("The download " + url + " is already running.");
@@ -900,7 +928,6 @@ public class DownloadsMonitorServlet extends HttpServlet {
 				} else if(commandType.equals(new String("-remove"))) {
 					String gid = request.getParameter("gid");
 					try {
-						//IDownloadProcess down = (IDownloadProcess) Class.forName("it.acsys.aria2wrapper.IDownloadProcessImpl").getConstructor(String.class, String.class, it.acsys.download.downloadplugin.IProductDownloadListener.class).newInstance(rpcHost,gid,null);
 						IDownloadProcess down = (IDownloadProcess) cache.get(gid);
 						if(down.getStatus().equals(EDownloadStatus.RUNNING)){
 							down.cancelDownload();
@@ -956,42 +983,7 @@ public class DownloadsMonitorServlet extends HttpServlet {
 				} else if(commandType.equals(new String("-addDAR"))) {
 					String DARUri = request.getParameter("DARUri");
 					if(!DatabaseUtility.getInstance().checkDARDownloading(DARUri)) {
-						PostMethod darMethod = new PostMethod(DARUri);
-						HttpClient client = new HttpClient();
-					    client.getParams().setParameter("http.useragent", "My Browser");
-					    Properties configProperties = ConfigUtility.loadConfig();
-					    try{
-				    	  FileInputStream monitoringFile = new FileInputStream("./templates/DMDARMonitoring.xml");
-				    	  DataInputStream in = new DataInputStream(monitoringFile);
-				    	  BufferedReader br = new BufferedReader(new InputStreamReader(in));
-				    	  StringBuffer sb = new StringBuffer();
-				    	  String strLine;
-				    	  while((strLine = br.readLine()) != null) {
-				    		  sb.append(strLine);
-				    	  }
-				    	  String filecontent = sb.toString();
-				    	  monitoringFile.close();
-				    	  in.close();
-				    	  br.close();
-				    	  filecontent = filecontent.replace("{DM_ID}", configProperties.getProperty("DMIdentifier"));    	  
-				    	  darMethod.setRequestBody(filecontent);
-				    	  darMethod.setRequestHeader(new Header("Content-Type", "application/xml"));
-				    	  client.executeMethod(darMethod);
-				    	  byte[] responseBody =  darMethod.getResponseBody();
-				    	  FileWriter fstream = new FileWriter(((String) configProperties.getProperty("DARsDir"))+"/DAR"+"_"+System.currentTimeMillis());
-					      BufferedWriter outBuff = new BufferedWriter(fstream);
-					      outBuff.write(new String(responseBody));
-					      outBuff.close();
-				    	  DARParser parser = new DARParser();
-				    	  parser.parse( new String(responseBody), DARUri, -1,getServletContext());
-				    	  out.print("Started download of DAR " + DARUri);
-						  log.debug("Started download of DAR " + DARUri);
-					    } catch(Exception e) {
-					    	e.printStackTrace();
-					        log.error("Can not start download of DAR " + DARUri);
-					    } finally {
-					    	darMethod.releaseConnection();
-					    } 
+						executeDAR(DARUri, null, out);
 					} else {
 						out.print("DAR " + DARUri + " already downloading.");
 					}
@@ -1047,6 +1039,47 @@ public class DownloadsMonitorServlet extends HttpServlet {
 	}
 
 
+	private void executeDAR(String DARUri, ArrayList result, PrintWriter out) throws IOException {
+		PostMethod darMethod = new PostMethod(DARUri);
+    	HttpClient client = new HttpClient();
+	    client.getParams().setParameter("http.useragent", "My Browser");
+	    try{
+    	  FileInputStream monitoringFile = new FileInputStream("./templates/DMDARMonitoring.xml");
+    	  DataInputStream in = new DataInputStream(monitoringFile);
+    	  BufferedReader br = new BufferedReader(new InputStreamReader(in));
+    	  StringBuffer sb = new StringBuffer();
+    	  String strLine;
+    	  while((strLine = br.readLine()) != null) {
+    		  sb.append(strLine);
+    	  }
+    	  String filecontent = sb.toString();
+    	  monitoringFile.close();
+    	  in.close();
+    	  br.close();
+    	  Properties configProperties = ConfigUtility.loadConfig();
+    	  filecontent = filecontent.replace("{DM_ID}", configProperties.getProperty("DMIdentifier"));    	  
+    	  darMethod.setRequestBody(filecontent);
+    	  darMethod.setRequestHeader(new Header("Content-Type", "application/xml"));
+    	  client.executeMethod(darMethod);
+    	  byte[] responseBody =  darMethod.getResponseBody();
+    	  FileWriter fstream = new FileWriter(((String) configProperties.getProperty("DARsDir"))+"/DAR"+"_"+System.currentTimeMillis());
+	      BufferedWriter outBuff = new BufferedWriter(fstream);
+	      outBuff.write(new String(responseBody));
+	      outBuff.close();
+    	  DARParser DARParser = new DARParser();
+    	  DARParser.parse( new String(responseBody), DARUri, -1, getServletContext());
+    	  out.print("Started download of DAR " + DARUri);
+		  log.debug("Started download of DAR " + DARUri);
+	    } catch(Exception e) {
+	    	if(result != null) {
+	    		result = this.sendMessage(result, "The download " + DARUri + " gives the following error\n" + e.getMessage());
+	    	}
+	        log.error("Can not start download of DAR " + DARUri);
+	    } finally {
+	    	darMethod.releaseConnection();
+	    	//result = DatabaseUtility.getInstance().getNewGridData(result, grid);
+	    }
+	}
 	private void sendData(ArrayList result, HttpServletResponse response) throws IOException {
 		Gson gson = new Gson();
 		String json = gson.toJson(result);

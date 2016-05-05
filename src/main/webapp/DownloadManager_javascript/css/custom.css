@@ -11,9 +11,9 @@
 }
 
 .wid99{
-    padding-left:15px;
-    padding-bottom:20px;
-    padding-top:20px;
+    padding-left:20px;
+    padding-bottom:10px;
+    padding-top:10px;
 }
 
 .ui-icon-circlesmall-plus {
@@ -24,11 +24,31 @@
     background-position: -16px -192px;
 }
 
+
+.contData p{padding:5px 10px 10px 10px;
+             background-repeat:no-repeat; 
+             background-position:center bottom; }
+             
+/*
 #serverData{border: 1px solid #BBBBBB !important; padding:10px;  width:90%;}
 
 #serverData p{border-bottom: 1px solid #cccccc; padding:10px 10px 0px 20px;
              background-repeat:no-repeat; 
              background-position:left bottom; }
+*/
+
+div#serverData {
+	float: left;
+	padding-left: 20px;
+}
+#serverData ul {
+	margin: 0;
+    padding: 0;
+}
+#serverData ul li {
+	list-style: none;
+}
+
 /*
 DBFORM 
 */
@@ -166,7 +186,7 @@ form.cmxform input[type=checkbox]{
 }
 
 .addMargin{
-	margin: 20px 20px 5px 20px !important;
+	margin: 10px 10px 10px 10px !important;
 }
 
 .panelClass{width:99%; height:99%; font-size:10px; text-align:center; 
@@ -226,3 +246,123 @@ form.cmxform input[type=checkbox]{
 	                  /*height:100%;*/ 
                   }
              
+
+body {
+	background: #444;
+	color: white;
+}
+
+.ngeo_grid_item_ops {
+	display: inline-block;
+	float: right;
+    margin-right: 15px;
+    background: #5393c5;
+    border-radius: 5px;
+}
+
+.ngeo_grid_item_ops button.ui-button,
+.ngeo_grid_global_ops button.ui-button
+{
+	background: transparent;
+	border-style: none;
+	padding: 5px 10px;
+}
+
+.ngeo_grid_item_ops button.ui-button:hover,
+.ngeo_grid_global_ops button.ui-button:hover
+{
+	background: #6fa2ca;
+}
+
+button#__btnProductDownload__ {
+    padding: 5px;
+}
+
+button#__btnProductDownload__:hover {
+	background: #6fa2ca;
+}
+
+.ngeo_grid_item_ops .fa {
+	font-size: 16px;
+}
+
+.ngeo_grid_global_ops {
+	display: inline-block;
+    margin-right: 5px;
+    background: #5393c5;
+    border-radius: 5px;
+}
+
+
+.ngeo_grid_global_ops .fa {
+	font-size: 24px;
+	display: block;
+}
+
+div#DM_running {
+	display: inline-block;
+	float: right;
+	font-weight: bold;
+	padding-right: 20px;
+}
+
+#ngeo_if_grid_container_ .ui-th-column > div {
+	line-height: 22px;
+}
+
+
+table.ui-jqgrid-htable {
+	border-color: #284c69;
+}
+
+#gbox_ngeo_if_grid {
+	position: relative;
+}
+
+.ui-jqgrid tr.jqgrow {
+    cursor: pointer;
+}
+
+.ui-jqgrid tr.jqgrow td {
+	padding: 0 5px 0 5px;
+}
+
+.ui-jqgrid tr.jqgrow .progress-label {
+	text-shadow: none;
+    background: white;
+    border-radius: 3px;
+    padding: 0 2px;
+}
+
+#_tab_manager_tabButtons {
+	height: 48px;
+    border-radius: 0;
+    background-image: url(images/ngeo-logo.png);
+	background-repeat: no-repeat;
+    background-position: 99% 0;
+}
+
+#_tab_manager_.ui-tabs .ui-tabs-nav li {
+	height: 30px;
+	margin-top: 15px;
+	line-height: 30px;
+}
+
+#_tab_manager_.ui-tabs .ui-tabs-nav li a {
+	padding: 0 1em;
+}
+
+
+
+#ngeo_if_downProductPathForm input#down_product_new_path {
+	line-height: 20px;
+    width: 350px;
+    border-radius: 5px;
+    border: solid 1px #aaa;
+	padding-left: 5px;
+}
+
+#ngeo_if_LOGFILE {
+	overflow: auto;
+	margin-bottom: -10px;
+}

@@ -29,7 +29,7 @@ public class DownloadAction {
 	    return downloadAction;
 	}
 	
-	public String  addDownload(String uri, String darURL, int wsId, String oldGid, String darStatus, String productDownloadDirectory, ServletContext context) {
+	public String  addDownload(String uri, String darURL, int wsId, String darStatus, String productDownloadDirectory, ServletContext context) {
 		LogUtility.setLevel(log);
 		String realUri = uri.trim();
 		String processIdentifier = new BigInteger(130, random).toString(32);
