@@ -17,15 +17,6 @@ function addToObjectDictionary(objectName, objectData){
     objectDictionary[objectName]=objectData;
 }
 
-var logInterval;
-function tabChangeVisibility(panelName){
-	if(panelName=="ngeo_if_LOGFILE"){
-		loadLog();
-		logInterval = setInterval(function(){loadLog();},10000);
-	}else{
-		clearInterval(logInterval);
-	}	
-}
 
 function tabSwitch(targetId, tabIndex){
     
@@ -47,10 +38,6 @@ function tabSwitch(targetId, tabIndex){
     }
     
    
-}
-
-function loadLog(){
-	sibEventHandler("pds_ngEO", 'LOAD_LOG', "logText", {}, "ngeo_if_LOGFILE"); 
 }
 
 function addToLogTextArea(response){

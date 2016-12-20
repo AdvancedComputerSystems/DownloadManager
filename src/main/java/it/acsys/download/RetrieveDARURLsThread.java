@@ -82,7 +82,7 @@ public class RetrieveDARURLsThread extends Thread {
 	public void run() {
 		String ssoStatus = (String) context.getAttribute("SSO_LOGIN_STATUS");
 		while(!stop && (ssoStatus == null || !ssoStatus.equals("LOGINFAILED"))) {
-			System.out.println("RUN " + Thread.currentThread().getName());
+//			System.out.println("RUN " + Thread.currentThread().getName());
 			LogUtility.setLevel(log);
 			ssoStatus = (String) context.getAttribute("SSO_LOGIN_STATUS");
 			Map<String, Integer> wsUrls = DatabaseUtility.getInstance().getWSUrls(configProperties.getProperty("DMIdentifier"));
@@ -90,11 +90,11 @@ public class RetrieveDARURLsThread extends Thread {
         	Integer currRefresh = null;
         	for(String currWs : wsUrls.keySet()){
         		log.info("RETRIEVING DAR FROM " + currWs);
-        		boolean isStopped = DatabaseUtility.getInstance().getStopped(currWs, configProperties.getProperty("DMIdentifier"));
+        		String isStopped = DatabaseUtility.getInstance().getStopped(currWs, configProperties.getProperty("DMIdentifier"));
         		boolean tobeContacted = DatabaseUtility.getInstance().getToContact(currWs, configProperties.getProperty("DMIdentifier"));
         		log.debug(currWs + " IS STOPPED " + isStopped);
         		log.debug(currWs + " TO BE CONTACTED " + tobeContacted);
-        		if(!isStopped  && tobeContacted){
+        		if((isStopped == null)  && tobeContacted){
         			try {
 						
 						Protocol easyhttps = new Protocol("https", (ProtocolSocketFactory) new EasySSLProtocolSocketFactory(), 443);
@@ -112,7 +112,8 @@ public class RetrieveDARURLsThread extends Thread {
 	    	    	long time = DatabaseUtility.getInstance().getTimeByWSUrl(currWs, dmIdentifier);
 	    	    	DARManager darManager = new DARManager(context);
 	    	    	ArrayList<String> monitoringURLs = darManager.getMonitoringURLs(currWs, dmIdentifier ,formatter.format(new Date(time)));
-	    	    	currRefresh = DatabaseUtility.getInstance().getRefreshPeriodByWsId(wsUrls.get(currWs));
+	    	        currRefresh = DatabaseUtility.getInstance().getRefreshPeriodByWsId(wsUrls.get(currWs));
+	    	    	//currRefresh = 30000;
 	    	    	log.info("currRefresh " + currRefresh);
 	    	    	Iterator<String> monitoringURLsIt = monitoringURLs.iterator();
 	    	    	int wsId = DatabaseUtility.getInstance().getWsId(currWs, dmIdentifier);

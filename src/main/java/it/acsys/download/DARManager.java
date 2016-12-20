@@ -1,10 +1,5 @@
 package it.acsys.download;
 
-import int_.esa.eo.ngeo.downloadmanager.exception.DMPluginException;
-import int_.esa.eo.ngeo.downloadmanager.plugin.IDownloadProcess;
-import it.acsys.download.ngeo.DARParser;
-import it.acsys.download.ngeo.database.DatabaseUtility;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -46,6 +41,11 @@ import com.siemens.pse.umsso.client.UmssoCLInput;
 import com.siemens.pse.umsso.client.UmssoHttpPost;
 import com.siemens.pse.umsso.client.util.UmssoHttpResponse;
 
+import int_.esa.eo.ngeo.downloadmanager.exception.DMPluginException;
+import int_.esa.eo.ngeo.downloadmanager.plugin.IDownloadProcess;
+import it.acsys.download.ngeo.DARParser;
+import it.acsys.download.ngeo.database.DatabaseUtility;
+
 public class DARManager {
 	private ServletContext context;
 	private static Logger log = Logger.getLogger(DARManager.class);
@@ -82,7 +82,7 @@ public class DARManager {
 	public DARManager(ServletContext context) {
 		this.context = context;
 		clc = new CommandLineCallback(user, pwd.toCharArray(), context);
-		((PoolingClientConnectionManager) clCore.getUmssoHttpClient().getConnectionManager()).setDefaultMaxPerRoute(150);;
+		((PoolingClientConnectionManager) clCore.getUmssoHttpClient().getConnectionManager()).setDefaultMaxPerRoute(150);
 	    ((PoolingClientConnectionManager) clCore.getUmssoHttpClient().getConnectionManager()).setMaxTotal(200);
 		LogUtility.setLevel(log);
 	}
@@ -95,7 +95,7 @@ public class DARManager {
 	    
 	    ArrayList<String> monitoringURLs = new ArrayList<String>();
 	    String ssoStatus = (String) context.getAttribute("SSO_LOGIN_STATUS");
-  	  	System.out.println("ssoStatus " + ssoStatus);
+//  	  	System.out.println("ssoStatus " + ssoStatus);
 	      if(ssoStatus != null && ssoStatus.equals("LOGINFAILED")) {
 	    	  log.error("");
   		  return monitoringURLs;
@@ -134,7 +134,7 @@ public class DARManager {
 					 break;
 				 }
 		  }
-		  System.out.println("serverDate " + serverDate);
+//		  System.out.println("serverDate " + serverDate);
 		  long serverTime = 0l;
 		  if(serverDate != null) {
 				 SimpleDateFormat dateFormatter = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH);
@@ -142,7 +142,7 @@ public class DARManager {
 				 serverTime = date.getTime();
 		  }
 		  
-		  System.out.println("Formatted serverDate " + serverTime);
+//		  System.out.println("Formatted serverDate " + serverTime);
 		  
 		  String dmIdentifier = configProperties.getProperty("DMIdentifier");
 		  
@@ -199,12 +199,6 @@ public class DARManager {
     	for(String gid : downloads.keySet()) {
     		HashMap<String, IDownloadProcess> cache = (HashMap<String, IDownloadProcess>) context.getAttribute("cache");
 			IDownloadProcess down = (IDownloadProcess) cache.get(gid);
-			try {
-				down.cancelDownload();
-			} catch(DMPluginException ex) {
-				ex.printStackTrace();
-				log.error(ex.getMessage());
-			}
 			int statusId = downloads.get(gid);
 			if(statusId == 3) {
 				try {
@@ -215,13 +209,23 @@ public class DARManager {
 					log.error(ex.getMessage());
 				}
 			}
+			try {
+				if(down != null) {
+//					System.out.println("STOPPING PROCESS " + down + " for gid " + gid);
+					down.cancelDownload();
+				}
+			} catch(DMPluginException ex) {
+				ex.printStackTrace();
+				log.error(ex.getMessage());
+			}
+			
 			if(statusId == 2 || statusId == 3) {
 //				UPDATING KILL DOWNLOAD STATUS
 				 DatabaseUtility.getInstance().killDownload(gid);
 			}
     	}
 //		UPDATING WS STATUS
-    	DatabaseUtility.getInstance().stopWS(wsId);
+    	DatabaseUtility.getInstance().stopWS(wsId, stopType);
     }
 	
 	public String downloadDAR(String darUrl, int wsId) {

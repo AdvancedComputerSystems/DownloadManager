@@ -11,7 +11,6 @@
 	    <div id="_tab_manager_" class="tabsContainer">
 		    <ul id="_tab_manager_tabButtons" class="ulContainer">	
 				<li><a href="#ngeo_if_LIST">ngEO Queue List for DM: {DM_ID}</a></li>
-				<li><a href="#ngeo_if_LOGFILE">ngEO LOG FILE</a></li>
 		    </ul>
 	        <!-- wrap tab-panels in ui-layout-content div -->
 		    <div id="_tab_manager_tabPanels" class="panelsContainer">	
@@ -101,9 +100,7 @@
 					  
 					 </div>
 				</div>
-				<div id="ngeo_if_LOGFILE">
-				      <div class="logClass" id="logText"></div>
-				</div>
+				
 				
 		    </div>
 	    </div>
@@ -362,7 +359,7 @@
 				   var max_height = $(window).height() - $(".ui-jqgrid .ui-jqgrid-bdiv").offset().top - 100;
 				   grid.jqGrid('setGridHeight', max_height);
 				   
-				   $('#ngeo_if_LOGFILE').height($(window).height() - 90);
+				   //$('#ngeo_if_LOGFILE').height($(window).height() - 90);
 			  }
 			  $(window).resize(onWindowResize);
 			  //onWindowResize();

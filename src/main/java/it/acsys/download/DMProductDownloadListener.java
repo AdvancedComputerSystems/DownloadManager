@@ -89,12 +89,12 @@ public class DMProductDownloadListener implements IProductDownloadListener {
 			}
 		}
 		if(status.equals(EDownloadStatus.IN_ERROR)) {
-			System.out.println("ERROR");
-			System.out.println(excProperties.keySet().size());
+//			System.out.println("ERROR");
+//			System.out.println(excProperties.keySet().size());
 			log.error("message " + message);
 			Set<Object> keys = excProperties.keySet();
 			for(Object key: keys) {
-				System.out.println("key " + key);
+//				System.out.println("key " + key);
 				if(message.contains((String) key)) {
 					message = excProperties.getProperty((String) key);
 				}
@@ -108,7 +108,7 @@ public class DMProductDownloadListener implements IProductDownloadListener {
 		}
 		
 		if(status.equals(EDownloadStatus.COMPLETED)) {
-			System.out.println("COMPLETED " + processIdentifier); 
+//			System.out.println("COMPLETED " + processIdentifier); 
 			progress = 100;
 		}
 		DatabaseUtility.getInstance().progress(progress, completedLength, status, processIdentifier);
@@ -117,11 +117,11 @@ public class DMProductDownloadListener implements IProductDownloadListener {
 			if(status.equals(EDownloadStatus.COMPLETED) || status.equals(EDownloadStatus.IN_ERROR) 
 					|| status.equals(EDownloadStatus.CANCELLED)) {
 						boolean isTemporaryDir = Boolean.valueOf((String) configProperties.get("isTemporaryDir"));
-						System.out.println("isTemporaryDir " + isTemporaryDir);
+//						System.out.println("isTemporaryDir " + isTemporaryDir);
 						IDownloadProcess process = (IDownloadProcess) cache.get(processIdentifier);
 						if(process != null) {
 							File[] files = process.getDownloadedFiles();
-							System.out.println("files[0] " + files[0].getAbsolutePath());
+//							System.out.println("files[0] " + files[0].getAbsolutePath());
 							if(files != null) {
 								if(status.equals(EDownloadStatus.CANCELLED)) {
 									for(int n=0; n<files.length; n++) {
@@ -138,10 +138,10 @@ public class DMProductDownloadListener implements IProductDownloadListener {
 										File newFile = null;
 										if(oldFile.exists()) {
 											if(oldFile.isDirectory()) {
-												System.out.println("IS DIR " + oldFile.getAbsolutePath());
+//												System.out.println("IS DIR " + oldFile.getAbsolutePath());
 												newFile = new File(parts[0] + parts[1]);
 												FileUtils.copyDirectory(oldFile, newFile);
-												System.out.println("Copying to " + newFile.getAbsolutePath());
+//												System.out.println("Copying to " + newFile.getAbsolutePath());
 												FileUtils.deleteDirectory(oldFile);
 												//INVOKE SHELL SCRIPT IF CONFIGURED
 												if(scriptCommand != null && !scriptCommand.equals("")) {
@@ -149,19 +149,19 @@ public class DMProductDownloadListener implements IProductDownloadListener {
 												}
 												
 											} else {
-												System.out.println("IS FILE " + oldFile.getAbsolutePath());
+//												System.out.println("IS FILE " + oldFile.getAbsolutePath());
 												newFile = new File(parts[0]);
 												if(parts[1].indexOf(File.separator)!=-1) {
 													newFile = new File(parts[0] + parts[1].substring(0, parts[1].indexOf(File.separator)));
 													File oldDir = new File(parts[0] + "TEMPORARY/" + parts[1].substring(0, parts[1].indexOf(File.separator)));
-													System.out.println("oldDir" + oldDir.getAbsolutePath());
+//													System.out.println("oldDir" + oldDir.getAbsolutePath());
 													if(oldDir.exists()) {
 														FileUtils.copyDirectory(oldDir, newFile);
 														FileUtils.deleteDirectory(oldDir);
 													}
 												} else {
 													FileUtils.copyFileToDirectory(oldFile, newFile);
-													System.out.println("Copying to " + newFile.getAbsolutePath());
+//													System.out.println("Copying to " + newFile.getAbsolutePath());
 													FileUtils.deleteQuietly(oldFile);
 												}
 												//INVOKE SHELL SCRIPT IF CONFIGURED

@@ -1,15 +1,5 @@
 package it.acsys.download.ngeo;
 
-import int_.esa.eo.ngeo.downloadmanager.exception.AuthenticationException;
-import int_.esa.eo.ngeo.downloadmanager.exception.DMPluginException;
-import int_.esa.eo.ngeo.downloadmanager.plugin.IDownloadPlugin;
-import int_.esa.eo.ngeo.downloadmanager.plugin.IDownloadPluginInfo;
-import int_.esa.eo.ngeo.downloadmanager.plugin.IDownloadProcess;
-import it.acsys.download.AESCryptUtility;
-import it.acsys.download.ConfigUtility;
-import it.acsys.download.DMProductDownloadListener;
-import it.acsys.download.ngeo.database.DatabaseUtility;
-
 import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -26,6 +16,16 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.SchedulerException;
 import org.quartz.TriggerKey;
+
+import int_.esa.eo.ngeo.downloadmanager.exception.AuthenticationException;
+import int_.esa.eo.ngeo.downloadmanager.exception.DMPluginException;
+import int_.esa.eo.ngeo.downloadmanager.plugin.IDownloadPlugin;
+import int_.esa.eo.ngeo.downloadmanager.plugin.IDownloadPluginInfo;
+import int_.esa.eo.ngeo.downloadmanager.plugin.IDownloadProcess;
+import it.acsys.download.AESCryptUtility;
+import it.acsys.download.ConfigUtility;
+import it.acsys.download.DMProductDownloadListener;
+import it.acsys.download.ngeo.database.DatabaseUtility;
  
 public class DownloadManagerJob implements Job {
 	public static final String JCS_CACHE = "JCS_CACHE";
@@ -64,15 +64,15 @@ public class DownloadManagerJob implements Job {
 		if(maxDownloads-running >0) {
 			HashMap<String, String> uris = DatabaseUtility.getInstance().getUriToDownload(maxDownloads-running);
 			for(String id : uris.keySet()) {
-				System.out.println("ID " + id + " " + Thread.currentThread().getName());
+//				System.out.println("ID " + id + " " + Thread.currentThread().getName());
 				String uri = uris.get(id);
 				HashMap<String, IDownloadPlugin> pluginsMap = (HashMap<String, IDownloadPlugin>) servletContext.getAttribute("pluginsMap");
 				HashMap<IDownloadPlugin, IDownloadPluginInfo> pluginsInfo = (HashMap<IDownloadPlugin, IDownloadPluginInfo>) servletContext.getAttribute("pluginsInfo");
 //				
 				IDownloadPlugin currPlugin = null;
 				for(String type : pluginsMap.keySet()) {
-					System.out.println("uri.trim() " + uri.trim());
-					System.out.println("type " + type);
+//					System.out.println("uri.trim() " + uri.trim());
+//					System.out.println("type " + type);
 					if(uri.trim().startsWith(type)) {
 						currPlugin = pluginsMap.get(type);
 						break;
@@ -86,7 +86,7 @@ public class DownloadManagerJob implements Job {
 				    	  if( downProcess != null) {
 				    		  downProcess.resumeDownload();
 				    	  } else  {
-				    		  System.out.println("currPlugin " + currPlugin);
+//				    		  System.out.println("currPlugin " + currPlugin);
 					    	  DMProductDownloadListener listener = new DMProductDownloadListener(id, cache);
 					    	  String user = (String) usersConfigProperties.get("umssouser");
 			    			 
@@ -98,12 +98,19 @@ public class DownloadManagerJob implements Job {
 					    	  DatabaseUtility.getInstance().updateDownloadStatisctics(id, pluginInfo.getName(), pluginInfo.handlePause());
 					    	  //File finalRep = ConfigUtility.getFileDownloadDirectory(uri, id);
 					    	  String finalRep = DatabaseUtility.getInstance().getProductDownloadDir(id);
-					    	  System.out.println("finalRep " + finalRep);
+//					    	  System.out.println("finalRep " + finalRep);
 					    	  log.info("DOWNLOAD STARTED " + uri.trim());
 			    			  downProcess = currPlugin.createDownloadProcess(new URI(uri.trim()), new File(finalRep), user, password, listener, configProperties.getProperty("proxy_host"), Integer.valueOf(configProperties.getProperty("proxy_port")), configProperties.getProperty("proxy_user"), configProperties.getProperty("proxy_pwd"));
 	//				    	  String processIdentifier = listener.getProcessIdentifier();
 	//				    	  log.debug("processIdentifier " + processIdentifier);
-					    	  cache.put(id, downProcess);
+			    			  log.debug("PUTTING INTO CACHE JOB " + id + " " + downProcess);
+			    			  cache.put(id, downProcess);
+			    			//CHECK IF WSURL HAS BEEN STOPPED
+					    	  String stop = DatabaseUtility.getInstance().getStopped(id);
+					    	  if(stop!= null && stop.equals("STOP_IMMEDIATELY")) {
+					    		  log.debug("STOPPING DOWNLOAD");
+					    		  downProcess.cancelDownload();
+					    	  }
 				    	  }
 				      } catch(AuthenticationException ex) {
 				    	  servletContext.setAttribute("SSO_LOGIN_STATUS", "LOGINFAILED");

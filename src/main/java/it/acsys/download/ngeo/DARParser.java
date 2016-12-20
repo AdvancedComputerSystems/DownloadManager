@@ -1,10 +1,7 @@
 package it.acsys.download.ngeo;
 
-import it.acsys.download.ConfigUtility;
-import it.acsys.download.LogUtility;
-import it.acsys.download.ngeo.database.DatabaseUtility;
-
 import java.io.ByteArrayInputStream;
+import java.util.HashMap;
 import java.util.List;
 
 import javax.servlet.ServletContext;
@@ -15,9 +12,14 @@ import javax.xml.bind.Unmarshaller;
 import org.apache.log4j.Logger;
 
 import _int.esa.eo.ngeo.iicd_d_ws._1.DataAccessMonitoringResp;
-import _int.esa.eo.ngeo.iicd_d_ws._1.ProductAccessStatusType;
 import _int.esa.eo.ngeo.iicd_d_ws._1.DataAccessMonitoringResp.ProductAccessList;
 import _int.esa.eo.ngeo.iicd_d_ws._1.DataAccessMonitoringResp.ProductAccessList.ProductAccess;
+import int_.esa.eo.ngeo.downloadmanager.exception.DMPluginException;
+import int_.esa.eo.ngeo.downloadmanager.plugin.IDownloadProcess;
+import _int.esa.eo.ngeo.iicd_d_ws._1.ProductAccessStatusType;
+import it.acsys.download.ConfigUtility;
+import it.acsys.download.LogUtility;
+import it.acsys.download.ngeo.database.DatabaseUtility;
 
 public class DARParser {
 	private static Logger log = Logger.getLogger(DARParser.class);
@@ -30,8 +32,10 @@ public class DARParser {
 		  try {
 			JAXBContext jaxbContext = JAXBContext.newInstance(DataAccessMonitoringResp.class);
 			Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
+			//log.debug(new String(content.getBytes()));
 			DataAccessMonitoringResp darResponse = (DataAccessMonitoringResp) jaxbUnmarshaller.unmarshal(new ByteArrayInputStream(content.getBytes()));
 			darStatus = darResponse.getMonitoringStatus();
+			//log.debug("darStatus " + darStatus);
 			DatabaseUtility.getInstance().updateDarStatus(darURL, darStatus);
 			DatabaseUtility.getInstance().updateMonitoringURLName(darURL, wsId, darResponse.getName());
 			ProductAccessList paList = darResponse.getProductAccessList();
@@ -40,7 +44,7 @@ public class DARParser {
 			}
 			List<ProductAccess> productAccessList = paList.getProductAccess();
 			for(ProductAccess currProdAccess : productAccessList) {
-				url = currProdAccess.getProductAccessURL();
+				url = currProdAccess.getProductAccessURL().replace(" ", "%20");
 				if(url.indexOf("?") != -1) {
 					String queryUri = url.trim().split("\\?")[1].replace("{", "%7B").replace("}", "%7D").replace(":", "%3A");
 					url = url.trim().split("\\?")[0] + "?" +  queryUri;

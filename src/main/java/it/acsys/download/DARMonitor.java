@@ -1,12 +1,5 @@
 package it.acsys.download;
 
-import int_.esa.eo.ngeo.downloadmanager.exception.DMPluginException;
-import int_.esa.eo.ngeo.downloadmanager.plugin.IDownloadPlugin;
-import int_.esa.eo.ngeo.downloadmanager.plugin.IDownloadPluginInfo;
-import int_.esa.eo.ngeo.downloadmanager.plugin.IDownloadProcess;
-import it.acsys.download.ngeo.DownloadManagerJob;
-import it.acsys.download.ngeo.database.DatabaseUtility;
-
 import java.awt.AWTException;
 import java.awt.Desktop;
 import java.awt.Image;
@@ -52,6 +45,7 @@ import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.conn.PoolingClientConnectionManager;
 import org.apache.http.params.CoreConnectionPNames;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -73,6 +67,13 @@ import com.siemens.pse.umsso.client.UmssoCLInput;
 import com.siemens.pse.umsso.client.UmssoHttpGet;
 import com.siemens.pse.umsso.client.UmssoHttpPost;
 import com.siemens.pse.umsso.client.util.UmssoHttpResponse;
+
+import int_.esa.eo.ngeo.downloadmanager.exception.DMPluginException;
+import int_.esa.eo.ngeo.downloadmanager.plugin.IDownloadPlugin;
+import int_.esa.eo.ngeo.downloadmanager.plugin.IDownloadPluginInfo;
+import int_.esa.eo.ngeo.downloadmanager.plugin.IDownloadProcess;
+import it.acsys.download.ngeo.DownloadManagerJob;
+import it.acsys.download.ngeo.database.DatabaseUtility;
 
 
 /**
@@ -106,13 +107,12 @@ public class DARMonitor implements ServletContextListener {
 
 	private static Map<String, IDownloadPlugin> pluginsMap;
 	private static Map<IDownloadPlugin, IDownloadPluginInfo> pluginsInfo;
-	
-	private static String showEditAction ="{\"_explicitType\":\"acs_sibAction\",\"interfaceClass\":\"ngeo_if_LIST\",\"command\":\"click\",\"targetId\":\"__btnEditConf__\",\"payloads\":{\"classname\":\"nGEo\",\"main_if\":\"ngEOManager\",\"__btnEditConf__\":{\"properties\":{\"filename\":\"\",\"ageNew\":\"\",\"status_id\":\"0\",\"error_message\":\"\",\"ngeo_if_grid\":{\"properties\":{\"selectedItems\":[],\"postData\":{\"_search\":false,\"nd\":1453739911187,\"rows\":20,\"page\":1,\"sidx\":\"filesource asc, ageNew\",\"sord\":\"asc\"}}}}}},\"interfaceId\":\"ngeo_if_LIST\"}";
+
 	
 	static {
         try {
         	String configPath = System.getProperty("configPath"); 
-        	System.out.println("configPath " + configPath);
+//        	System.out.println("configPath " + configPath);
         	File configFile = new File(configPath);
         	InputStream stream  = new FileInputStream(configFile);
         	configProperties = new Properties();
@@ -148,6 +148,10 @@ public class DARMonitor implements ServletContextListener {
 	            clCore.getUmssoHttpClient().getConnectionManager().getSchemeRegistry().register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
 	        	clCore.getUmssoHttpClient().getConnectionManager().getSchemeRegistry().register(new Scheme("https", sf, 443));
         	}
+        	
+        	((PoolingClientConnectionManager) clCore.getUmssoHttpClient().getConnectionManager()).setDefaultMaxPerRoute(150);
+    	    ((PoolingClientConnectionManager) clCore.getUmssoHttpClient().getConnectionManager()).setMaxTotal(200);
+    		
         	
         } catch (Exception e) {
         	e.printStackTrace();
@@ -209,7 +213,6 @@ public class DARMonitor implements ServletContextListener {
 	        log.error("Can not register DM");
 	    } finally {
 	    	registrationMethod.releaseConnection();
-//	    	clCore.getUmssoHttpClient().getCookieStore().clear();
 	    }
 	      
     }
@@ -221,7 +224,7 @@ public class DARMonitor implements ServletContextListener {
             System.out.println("SystemTray is not supported");
             
         } else {
-        	 System.out.println("SystemTray IS supported");
+//        	 System.out.println("SystemTray IS supported");
 	        final PopupMenu popup = new PopupMenu();
 	        Image image = new ImageIcon("./Resources/ngEOBlue.png").getImage();
 			
@@ -243,13 +246,13 @@ public class DARMonitor implements ServletContextListener {
 	        
 	        trayIcon.setPopupMenu(popup);
 	        
-	        System.out.println("IMAGE TRAY HASH " + image.hashCode());
+//	        System.out.println("IMAGE TRAY HASH " + image.hashCode());
 	        
 	        try {
 	            tray.add(trayIcon);
 	        } catch (AWTException e) {
 	        	e.printStackTrace();
-	            System.out.println("TrayIcon could not be added.");
+//	            System.out.println("TrayIcon could not be added.");
 	            return;
 	        }
 	        exitItem.addActionListener(new ActionListener() {
@@ -357,7 +360,7 @@ public class DARMonitor implements ServletContextListener {
 			StringTokenizer tokenizer2 = new StringTokenizer(currentPlug,"@@");
 			String t1 = tokenizer2.nextToken();
 			String t2 = tokenizer2.nextToken();
-			System.out.println(" keyPluginsMap put " + t2 + " " + t1);
+//			System.out.println(" keyPluginsMap put " + t2 + " " + t1);
 			keyPluginsMap.put(t2, t1);
 		}
 		pluginsMap = new HashMap<String, IDownloadPlugin>();
@@ -380,7 +383,7 @@ public class DARMonitor implements ServletContextListener {
   	  	Iterator<IDownloadPlugin> availablePulgins = pluginClasses.iterator();
 		while(availablePulgins.hasNext())  {
 			IDownloadPlugin curr = availablePulgins.next();
-			System.out.println("curr.getClass().getName() " + curr.getClass().getName());
+//			System.out.println("curr.getClass().getName() " + curr.getClass().getName());
 			String currType = keyPluginsMap.get(curr.getClass().getName());
 			if(currType != null) {
 				String configPath = System.getProperty("configPath"); 
@@ -392,9 +395,9 @@ public class DARMonitor implements ServletContextListener {
 					e.printStackTrace();
 					log.error("Can not initialize plug in " + curr.getClass());
 				}
-				System.out.println(" pluginsMap put " + currType + " " + curr.getClass().getName());
+//				System.out.println(" pluginsMap put " + currType + " " + curr.getClass().getName());
 				pluginsMap.put(currType, curr);
-				System.out.println(" pluginsInfo put " + curr.getClass().getName() + " " + pluginInfo.getClass());
+//				System.out.println(" pluginsInfo put " + curr.getClass().getName() + " " + pluginInfo.getClass());
 				pluginsInfo.put(curr, pluginInfo);
 			}
 		}
@@ -583,15 +586,15 @@ public class DARMonitor implements ServletContextListener {
             	String url = all.get(gid);
             	IDownloadPlugin currPlugin = null;
 				for(String type : pluginsMap.keySet()) {
-					System.out.println("uri.trim() " + url.trim());
-					System.out.println("type " + type);
+//					System.out.println("uri.trim() " + url.trim());
+//					System.out.println("type " + type);
 					if(url.trim().contains(type)) {
 						currPlugin = pluginsMap.get(type);
 						break;
 					}
 				}
 				
-				System.out.println("currPlugin " + currPlugin);
+//				System.out.println("currPlugin " + currPlugin);
 				if(currPlugin != null) {
 						try {
 				    	  DMProductDownloadListener listener = new DMProductDownloadListener(gid, cache);
@@ -609,11 +612,22 @@ public class DARMonitor implements ServletContextListener {
 				    	  DatabaseUtility.getInstance().updateDownloadStatisctics(gid, pluginInfo.getName(), pluginInfo.handlePause());
 				    	  //File finalRep = ConfigUtility.getFileDownloadDirectory(url, gid);
 				    	  String finalRep = DatabaseUtility.getInstance().getProductDownloadDir(gid);
-				    	  System.out.println("finalRep " + finalRep);
+//				    	  System.out.println("finalRep " + finalRep);
 				    	  log.info("DOWNLOAD STARTED " + url.trim());
 				    	  IDownloadProcess downProcess = currPlugin.createDownloadProcess(new URI(url.trim()), new File(finalRep), 
 		    					  user, password, listener, configProperties.getProperty("proxy_host"), Integer.valueOf(configProperties.getProperty("proxy_port")), configProperties.getProperty("proxy_user"), configProperties.getProperty("proxy_pwd"));
+				    	  
+				    	  log.debug("PUTTING INTO CACHE " + gid + " " + downProcess);
 				    	  cache.put(gid, downProcess);
+				    	  
+				    	  //CHECK IF WSURL HAS BEEN STOPPED
+				    	  String stop = DatabaseUtility.getInstance().getStopped(gid);
+				    	  if(stop!= null && stop.equals("STOP_IMMEDIATELY")) {
+				    		  log.debug("STOPPING DOWNLOAD");
+				    		  downProcess.cancelDownload();
+				    	  }
+				    	  
+				    	  
 				    	  if(pausedDownloads.keySet().contains(gid)) {
 				    		  downProcess.pauseDownload();
 				    	  }
@@ -632,7 +646,6 @@ public class DARMonitor implements ServletContextListener {
     		}
             Map<String, String> idles = DatabaseUtility.getInstance().getDownloadsByStatusId(7);
             for(String gid : idles.keySet()) {
-            	String url = idles.get(gid);
             	DatabaseUtility.getInstance().updateDownloadStatus(gid, 2);
             }
     	}

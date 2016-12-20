@@ -361,8 +361,3 @@ table.ui-jqgrid-htable {
     border: solid 1px #aaa;
 	padding-left: 5px;
 }
-
-#ngeo_if_LOGFILE {
-	overflow: auto;
-	margin-bottom: -10px;
-}

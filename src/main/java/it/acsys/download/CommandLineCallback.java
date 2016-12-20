@@ -23,8 +23,8 @@ public class CommandLineCallback implements UmssoVisualizerCallback {
 	}
 
 	public UmssoUserCredentials showLoginForm(String message, String spResourceUrl, String idpUrl) {
-		System.out.println("user " + userCredentials.getUserName() + " attempt " + userAttempts);
-		System.out.println("user pwd " + new String(userCredentials.getPassword()) + " attempt " + userAttempts);
+//		System.out.println("user " + userCredentials.getUserName() + " attempt " + userAttempts);
+//		System.out.println("user pwd " + new String(userCredentials.getPassword()) + " attempt " + userAttempts);
 		userAttempts++;
 		if(userAttempts >= 2) {
 			log.error(loginError);

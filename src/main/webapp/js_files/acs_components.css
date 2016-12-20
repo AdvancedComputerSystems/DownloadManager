@@ -44,9 +44,6 @@ p{margin:	0 0 1ex;}
 .VDividedBox{width:100%; height:100%; border: 1px solid blue;  position:absolute; top:120px;}
 .rowDividedBox{width: 100%; height:33%; border: 1px solid red;}
 
-#ngeo_if_LOGFILE{
-   overflow:auto;
-}
 #ngeo_if_LIST{
    overflow:auto; 
 }

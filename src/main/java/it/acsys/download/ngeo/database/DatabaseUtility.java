@@ -138,7 +138,7 @@ public class DatabaseUtility {
 	}
 	
 	
-	public boolean getStopped(String WebServiceURL, String downloadManagerId) {
+	public String getStopped(String WebServiceURL, String downloadManagerId) {
 		r.lock();   
 		Connection con = getConnection();
 			
@@ -148,7 +148,7 @@ public class DatabaseUtility {
 				pst.setString(2,downloadManagerId);
 				ResultSet rset = pst.executeQuery();
 				while(rset.next()) {
-					return rset.getBoolean("stop");
+					return rset.getString("stop");
 				}
 	            pst.close();
 	            rset.close();
@@ -164,7 +164,7 @@ public class DatabaseUtility {
 			}
 		}
 		
-		return false;
+		return null;
 			
 	 }
 	
@@ -546,13 +546,14 @@ public class DatabaseUtility {
 		
 	}
 
-	public void stopWS(int wsId) {
+	public void stopWS(int wsId, String stopType) {
 		w.lock();
 		Connection con = getConnection();
 		try {
-			String sqlUpdate = "UPDATE WSURL SET STOP = TRUE WHERE ID = ?";
+			String sqlUpdate = "UPDATE WSURL SET STOP = ? WHERE ID = ?";
 			PreparedStatement pst = con.prepareStatement(sqlUpdate);
-			pst.setInt(1,wsId);
+			pst.setString(1,stopType);
+			pst.setInt(2,wsId);
 			pst.executeUpdate();
 		    pst.close();
 		} catch (SQLException e) {
@@ -812,6 +813,36 @@ public class DatabaseUtility {
 		
 		return info;
 	}
+	
+	
+	public List<Integer> getDownloadsIdByDAR(String DARUri, int statusId) {
+		w.lock();
+		List<Integer> result = new ArrayList<Integer>();
+		Connection con = getConnection();
+		try {
+			PreparedStatement pst = con.prepareStatement("SELECT ID FROM DOWNLOADS WHERE FILESOURCE = ? and status_id = ?");
+			pst.setString(1, DARUri);
+			pst.setInt(2, statusId);
+			ResultSet rset = pst.executeQuery();
+			while(rset.next()) {
+				result.add(rset.getInt("ID"));
+			}
+			pst.close();
+			rset.close();
+		} catch(SQLException e){
+			e.printStackTrace();
+			log.error("Can not select id of downloads for DAR " + DARUri);
+		} finally {
+			w.unlock();
+			try {
+				con.close();
+			} catch(SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		return result;
+		
+	}
 
 	public List<String> getDownloadsByDAR(String DARUri, int statusId) {
 		w.lock();
@@ -828,7 +859,35 @@ public class DatabaseUtility {
 			rset.close();
 		} catch(SQLException e){
 			e.printStackTrace();
-			log.error("Can not cancel download of DAR " + DARUri);
+			log.error("Can not select download of DAR " + DARUri);
+		} finally {
+			w.unlock();
+			try {
+				con.close();
+			} catch(SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		return result;
+		
+	}
+	
+	public List<String> getActiveDownloadsByDAR(String dARUri) {
+		w.lock();
+		List<String> result = new ArrayList<String>();
+		Connection con = getConnection();
+		try {
+			PreparedStatement pst = con.prepareStatement("SELECT GID FROM DOWNLOADS WHERE FILESOURCE = ? and status_id <= 3");
+			pst.setString(1, dARUri);
+			ResultSet rset = pst.executeQuery();
+			while(rset.next()) {
+				result.add(rset.getString("GID"));
+			}
+			pst.close();
+			rset.close();
+		} catch(SQLException e){
+			e.printStackTrace();
+			log.error("Can not select download of DAR " + dARUri);
 		} finally {
 			w.unlock();
 			try {
@@ -1048,6 +1107,27 @@ public class DatabaseUtility {
 		return running;
 	}
 
+	public void updateDownloadStatus(Integer id, int statusId) {
+		w.lock();
+		Connection con = getConnection();
+		try {
+			PreparedStatement pst = con.prepareStatement("update downloads set status_id = ? where id = ?");
+			pst.setInt(1, statusId);
+			pst.setInt(2, id);
+			pst.executeUpdate();		
+		} catch (SQLException e) {
+	         e.printStackTrace();
+	         log.error(e.getMessage());
+	     } finally {
+	    	 w.unlock();
+	    	try {
+	    		if(con != null)
+	   				con.close();
+			} catch(SQLException e) {
+				e.printStackTrace();
+			}
+     	}		
+	}
 	
 	public void updateDownloadStatus(String id, int statusId) {
 		w.lock();
@@ -1103,7 +1183,7 @@ public class DatabaseUtility {
 		Connection con = getConnection();
 		Map<String, Integer> result = new HashMap<String, Integer>();	
 			try {
-				String sql = "select  registrationurl, id from WSURL where registered = true and stop = false and active = true and dm_id = ?";
+				String sql = "select  registrationurl, id from WSURL where registered = true and stop is null and active = true and dm_id = ?";
 				PreparedStatement pst = con.prepareStatement(sql);
 				pst.setString(1, dmIdentifier);
 				ResultSet rset = pst.executeQuery();
@@ -1138,11 +1218,11 @@ public class DatabaseUtility {
 				ResultSet rset = pst.executeQuery();
 				
 				while(rset.next()) {
-					System.out.println("stop" + rset.getBoolean("stop"));
-					System.out.println("unreachable" + rset.getBoolean("unreachable"));
-					System.out.println("active" + rset.getBoolean("active"));
-					System.out.println("registered" + rset.getBoolean("registered"));
-					if(rset.getBoolean("stop") || rset.getBoolean("unreachable") || !rset.getBoolean("active") || !rset.getBoolean("registered")) {
+//					System.out.println("stop" + rset.getString("stop"));
+//					System.out.println("unreachable" + rset.getBoolean("unreachable"));
+//					System.out.println("active" + rset.getBoolean("active"));
+//					System.out.println("registered" + rset.getBoolean("registered"));
+					if((rset.getString("stop") != null) || rset.getBoolean("unreachable") || !rset.getBoolean("active") || !rset.getBoolean("registered")) {
 						status = "acs_error";
 						break;
 					}
@@ -1364,33 +1444,33 @@ public class DatabaseUtility {
 		return statusId;
 	}
 
-	public String getDarStatus(String gid) {
-		r.lock();   
-		Connection con = getConnection();
-		String darStatus = "";	
-			try {
-				String sql = "select  dar_status from downloads where gid =?";
-				PreparedStatement pst = con.prepareStatement(sql);
-				pst.setString(1, gid);
-				ResultSet rset = pst.executeQuery();
-				while(rset.next()) {
-					darStatus = rset.getString("dar_status");
-				}
-	            rset.close();
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	        log.error(e.getMessage());
-	    } finally {
-	    	r.unlock();
-			try {
-				con.close();
-			} catch(SQLException e) {
-				e.printStackTrace();
-			}
-		}
-
-		return darStatus;
-	}
+//	public String getDarStatus(String gid) {
+//		r.lock();   
+//		Connection con = getConnection();
+//		String darStatus = "";	
+//			try {
+//				String sql = "select  dar_status from downloads where gid =?";
+//				PreparedStatement pst = con.prepareStatement(sql);
+//				pst.setString(1, gid);
+//				ResultSet rset = pst.executeQuery();
+//				while(rset.next()) {
+//					darStatus = rset.getString("dar_status");
+//				}
+//	            rset.close();
+//	    } catch (SQLException e) {
+//	        e.printStackTrace();
+//	        log.error(e.getMessage());
+//	    } finally {
+//	    	r.unlock();
+//			try {
+//				con.close();
+//			} catch(SQLException e) {
+//				e.printStackTrace();
+//			}
+//		}
+//
+//		return darStatus;
+//	}
 
 	public void updateDarStatus(String darURL, String darStatus) {
 		w.lock();
@@ -1480,30 +1560,31 @@ public class DatabaseUtility {
 			
 			
 			//if URL is MANUAL_DOWNLOAD checks if it exists and if not insert it into database
-			PreparedStatement pst = con.prepareStatement("Select * from  monitoringurl where url = 'MANUAL_DOWNLOAD'");
-			ResultSet rset = pst.executeQuery();
-			if(!rset.next()) {
-				pst = con.prepareStatement("insert into monitoringurl (URL, WS_ID,STATUS, start_time, name) values(?, ?, ?, ?, ?)");
-				pst.clearParameters();
-				pst.setString(1, "MANUAL_DOWNLOAD");
-				pst.setInt(2, -1);
-				pst.setString(3, "");
-				pst.setString(4, "MANUAL_DOWNLOAD");
-				pst.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
-				pst.executeUpdate();
+			if(darURL.equals("MANUAL_DOWNLOAD")) {
+				PreparedStatement pst = con.prepareStatement("Select * from  monitoringurl where url = 'MANUAL_DOWNLOAD'");
+				ResultSet rset = pst.executeQuery();
+				if(!rset.next()) {
+					pst = con.prepareStatement("insert into monitoringurl (URL, WS_ID,STATUS, start_time, name) values(?, ?, ?, ?, ?)");
+					pst.clearParameters();
+					pst.setString(1, "MANUAL_DOWNLOAD");
+					pst.setInt(2, -1);
+					pst.setString(3, "");
+					pst.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
+					pst.setString(5, "MANUAL_DOWNLOAD");
+					pst.executeUpdate();
+				}
 			}
 			
 			Statement stat= con.createStatement();
-			rset = stat.executeQuery("select max(priority) as maxPriority from downloads");
+			ResultSet rset = stat.executeQuery("select max(priority) as maxPriority from downloads");
 			while(rset.next()) {
 				maxPriority = rset.getInt("maxPriority");
 				if(maxPriority == 0) {
 					maxPriority = 1;
 				}
 			}
-			String sql = "Insert into downloads (filename, filesource, ws_id, gid, status_id, priority, dar_status, realuri, product_download_dir) values(?,?,?,?,?,?,?,?,?)";
-		    pst.clearParameters();
-			pst = con.prepareStatement(sql);
+			String sql = "Insert into downloads (filename, filesource, ws_id, gid, status_id, priority, dar_status, realuri, product_download_dir) values(?,?,?,?,?,?,?,?,?)";		    
+		    PreparedStatement pst = con.prepareStatement(sql);
 			pst.setString(1, uri);
 			pst.setString(2,darURL.trim());
 			pst.setInt(3,wsId);
@@ -2367,6 +2448,35 @@ public class DatabaseUtility {
 				e.printStackTrace();
 			}
 		}
+		
+	}
+
+	public String getStopped(String gid) {
+		r.lock();   
+		Connection con = getConnection();
+			
+			try {
+				PreparedStatement pst = con.prepareStatement("select stop from WSURL inner join downloads on ws_id = wsurl.id where gid = ? ");
+				pst.setString(1,gid);
+				ResultSet rset = pst.executeQuery();
+				while(rset.next()) {
+					return rset.getString("stop");
+				}
+	            pst.close();
+	            rset.close();
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        log.error(e.getMessage());
+	    } finally {
+	    	r.unlock();
+			try {
+				con.close();
+			} catch(SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		return null;
 		
 	}
 }

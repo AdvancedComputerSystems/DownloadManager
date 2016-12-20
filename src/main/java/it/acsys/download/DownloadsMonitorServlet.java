@@ -1,12 +1,5 @@
 package it.acsys.download;
 
-import int_.esa.eo.ngeo.downloadmanager.exception.DMPluginException;
-import int_.esa.eo.ngeo.downloadmanager.plugin.EDownloadStatus;
-import int_.esa.eo.ngeo.downloadmanager.plugin.IDownloadProcess;
-import it.acsys.download.ngeo.DARParser;
-import it.acsys.download.ngeo.DownloadAction;
-import it.acsys.download.ngeo.database.DatabaseUtility;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.DataInputStream;
@@ -18,6 +11,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
@@ -36,7 +31,6 @@ import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
@@ -45,6 +39,13 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.sun.org.apache.xml.internal.security.utils.Base64;
+
+import int_.esa.eo.ngeo.downloadmanager.exception.DMPluginException;
+import int_.esa.eo.ngeo.downloadmanager.plugin.EDownloadStatus;
+import int_.esa.eo.ngeo.downloadmanager.plugin.IDownloadProcess;
+import it.acsys.download.ngeo.DARParser;
+import it.acsys.download.ngeo.DownloadAction;
+import it.acsys.download.ngeo.database.DatabaseUtility;
 
 /**
  * Servlet implementation class DownloadsMonitorServlet
@@ -213,7 +214,7 @@ public class DownloadsMonitorServlet extends HttpServlet {
 	        if(properties.get("script_command") != null) {
 	        	scriptCommand =(String) properties.get("script_command");
 	        }
-	        System.out.println("scriptCommand " + scriptCommand);
+//	        System.out.println("scriptCommand " + scriptCommand);
 	        
 	        filecontent = filecontent.replace("{script_command}", scriptCommand);
 	        
@@ -249,45 +250,6 @@ public class DownloadsMonitorServlet extends HttpServlet {
 		}
 		
 		return result;
-	}
-	
-	private void readLog(HttpServletResponse response) throws IOException {
-				
-		StringBuffer logBuffer = (StringBuffer) getServletContext().getAttribute("logBuffer");
-		getServletContext().setAttribute("logBuffer", new StringBuffer());
-		
-		ArrayList result = new ArrayList();
-		HashMap resp = new HashMap();
-		HashMap payload = new HashMap();
-		
-		//System.out.println("buffer " + buffer);
-		
-	    payload.put("_EXEC_METHOD_NAME_", "appendData");
-	    payload.put("_ARGV_", logBuffer.toString());
-	    //List data = new ArrayList();
-	    
-    	/*HashMap event1 = new HashMap();
-    	event1.put("objName","logText");
-	    event1.put("methodName","appendData");
-	    event1.put("args",buffer.toString());
-	    data.add(event1);
-	   
-	    HashMap argv = new HashMap();
-	    argv.put("data", data);
-		payload.put("_ARGV_", argv);*/
-			
-		resp.put("interfaceClass",  "ngeo_if_LOGFILE");
-		resp.put("interfaceId",  "ngeo_if_LOGFILE");
-		resp.put("command",  "EXEC");
-		resp.put("targetId",  "logText");
-		resp.put("payloads",  payload);
-		result.add(resp);
-		sendData(result, response);
-//		Gson gson = new Gson();
-//		String json = gson.toJson(result);
-//		out.write(Base64.encode(json.getBytes()));
-//		out.flush();
-//		response.flushBuffer();
 	}
 	
 	private ArrayList refreshGrid(JsonObject payloads, String message) throws IOException{
@@ -545,7 +507,7 @@ public class DownloadsMonitorServlet extends HttpServlet {
 		        			while(iterator.hasNext()) {
 		        				JsonObject currEl = (JsonObject) iterator.next();
 		        				String gid = currEl.get("gid").getAsString();
-		        				System.out.println("gid " + gid);
+//		        				System.out.println("gid " + gid);
 		        				int statusId = currEl.get("status_id").getAsInt();
 		        				String filename = currEl.get("filename").getAsString();
 		        				if(statusId ==  1) {
@@ -691,7 +653,7 @@ public class DownloadsMonitorServlet extends HttpServlet {
 		        				String filename = currEl.get("filename").getAsString();
 		        				if(statusId ==  4) {
 		        					//RETRY
-		        					System.out.println("REMOVING FROM CACHE " + gid);
+//		        					System.out.println("REMOVING FROM CACHE " + gid);
 		        					cache.remove(gid);
 		        					if(!DatabaseUtility.getInstance().checkFileDownloading(filename)) {
 		        						log.debug("Retrying to download " + filename);
@@ -733,8 +695,13 @@ public class DownloadsMonitorServlet extends HttpServlet {
 		        			JsonObject targetObj = (JsonObject) payloads.get("__btnProductDownload__");
 		        			JsonObject properties = (JsonObject) targetObj.get("properties");
 		        			String productUri = ((JsonElement) properties.get("down_product_new_path")).getAsString();
-		        			UrlValidator urlValidator = new UrlValidator(UrlValidator.ALLOW_2_SLASHES + UrlValidator.ALLOW_ALL_SCHEMES + UrlValidator.ALLOW_LOCAL_URLS);
-		        			if(!urlValidator.isValid(productUri)) {
+		        			boolean isUrlValid = true;
+		        			try {
+		        				URI uri = new URI(productUri);
+		        			} catch(URISyntaxException ex) {
+		        				isUrlValid = false;
+		        			}
+		        			if(!isUrlValid) {
 		        				result = this.sendMessage(result, "Inserted URL " + productUri + " is not valid.");
 		        			} else {
 		        				if(!DatabaseUtility.getInstance().checkFileDownloading(productUri)) {
@@ -746,6 +713,7 @@ public class DownloadsMonitorServlet extends HttpServlet {
 			        			}
 		        			}
 		        			
+		        			
 		        			result = this.triggerRefrehGrid(result, "ngeo_if_grid");
 		        		} 
 		        	}
@@ -755,13 +723,10 @@ public class DownloadsMonitorServlet extends HttpServlet {
 	        	log.error("Wrong SSO username/password.\n Please edit the configuration properties and restart the service.");
         		result = this.sendMessage(result, "Wrong SSO username/password.\n Please edit the configuration properties and restart the service.");
         		getServletContext().setAttribute("SHOW_POPUP", false);
-        	} else if(command.getAsString().equalsIgnoreCase("TAB_REFRESH")) {
-        		this.readLog(response);
-        		return;
         	} else if(command.getAsString().equalsIgnoreCase("fxgridevent_refresh")) {
         		 if(payloads.get("originalEventName").getAsString().equals("load_ngeo_if_grid")) {
         			//REFRSH REQUEST TO WS
-        			 System.out.println("REFRSH REQUEST TO WS");
+//        			 System.out.println("REFRSH REQUEST TO WS");
         			RetrieveDARURLsThread retrieveDAR = (RetrieveDARURLsThread) getServletContext().getAttribute("RetrieveDARURLsThread");
         			retrieveDAR.stopThread();
         			retrieveDAR = new RetrieveDARURLsThread(getServletContext());

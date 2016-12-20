@@ -71,9 +71,9 @@ public class ConfigUtility {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		  System.out.println("uri " + uri);
+//		  System.out.println("uri " + uri);
 		  String query = uriOBJ.getQuery();
-		  System.out.println("query " + query);
+//		  System.out.println("query " + query);
 		  String downloadsOptions = "";
 		  if(query != null) {
 		    	  String[] params = query.split("&");
@@ -90,7 +90,7 @@ public class ConfigUtility {
 		  }
 		}
 	  	  String path = uriOBJ.getPath();
-	  	  System.out.println("path " + path);
+//	  	  System.out.println("path " + path);
 	  	  String fileName = path.substring(path.lastIndexOf("/")+1);
 	  	  if(fileName.indexOf(".") != -1) {
 	  		  fileName = fileName.substring(0, fileName.indexOf("."));

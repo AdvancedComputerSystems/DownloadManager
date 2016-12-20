@@ -1,15 +1,15 @@
 package it.acsys.download.ngeo;
 
 
-import it.acsys.download.LogUtility;
-import it.acsys.download.ngeo.database.DatabaseUtility;
-
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import javax.servlet.ServletContext;
 
 import org.apache.log4j.Logger;
+
+import it.acsys.download.LogUtility;
+import it.acsys.download.ngeo.database.DatabaseUtility;
 
 public class DownloadAction {
 	private static DownloadAction downloadAction;
